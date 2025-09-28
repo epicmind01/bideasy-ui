@@ -1,46 +1,419 @@
-import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+"use client";
+import React, { useEffect, useRef, useState,useCallback } from "react";
+import {Link,useLocation} from "react-router-dom";
+import { useSidebar } from "../context/SidebarContext";
+import {
+  BoxCubeIcon,
+  CalenderIcon,
+  ChevronDownIcon,
+  GridIcon,
+  HorizontaLDots,
+  PageIcon,
+  PlugInIcon,
+} from "../icons/index";
 
-type NavItemProps = { label: string; icon?: ReactNode; to?: string };
+type NavItem = {
+  name: string;
+  icon: string; // svg imported as URL string in Vite
+  path?: string;
+  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+};
 
-const baseClasses = 'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium';
-const inactive = 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800';
-const active = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300';
-
-const NavItem = ({ label, icon, to }: NavItemProps) => {
-  if (to) {
-    return (
-      <NavLink
-        to={to}
-        className={({ isActive }: { isActive: boolean }) => [baseClasses, isActive ? active : inactive].join(' ')}
-        end
-      >
-        <span className="h-4 w-4 text-current">{icon}</span>
-        <span>{label}</span>
-      </NavLink>
-    );
+const navItems: NavItem[] = [
+  {
+    icon: GridIcon,
+    name: "Analytics",
+    subItems: [
+               { name: "Stock Level Change", path: "/stockChange", pro: false }, 
+               { name: "Inventory Valuation", path: "/inventoryValuation", pro: false },
+               { name: "Inventory Turnover Ratio", path: "/inventoryTurnOverRatio", pro: false },
+               { name: "Return Rate Percentage", path: "/returnRatePercentage", pro: false },
+               { name: "Aging Distribution", path: "/agingDistribution", pro: false },
+               { name: "Monthly Purchase Value", path: "/monthlyPurchaseValue", pro: false },
+               { name: "Vendor Performance", path: "/vendorPerformance", pro: false },
+               { name: "Units Sold per SKU", path: "/unitSoldperSKU", pro: false },
+               { name: "Revenue Distribution", path: "/revenueDistribution", pro: false },
+               { name: "Revenue per Location", path: "/revenuePerLocation", pro: false },
+              ],
+    path: "/"
+  },
+   {
+    icon: CalenderIcon,
+    name: "Forecasting",
+    subItems: [
+               { name: "Sales Quantity Forecast", path: "/salesQuantityForecast", pro: false }, 
+               { name: "Cashflow Forecast", path: "/cashFlowForecast", pro: false },
+               { name: "Replenishment and Aging", path: "/stockReplenishmentForecast", pro: false },
+              ],
+    path: "/"
+  },
+  {
+    icon: PageIcon,
+    name: "AI Assistant",
+    path: "/analyticsAI",
   }
+  
+];
+
+const othersItems: NavItem[] = [
+  {
+    icon: BoxCubeIcon,
+    name: "Archive",
+    path: "/analyticsArchive",
+  },
+  
+  
+  {
+    icon: PlugInIcon,
+    name: "Account",
+    subItems: [
+      { name: "Sign In", path: "/signin", pro: false },
+      { name: "Sign Up", path: "/signup", pro: false },
+    ],
+  },
+];
+
+const Sidebar: React.FC = () => {
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const pathname = useLocation().pathname;
+
+  const renderMenuItems = (
+    navItems: NavItem[],
+    menuType: "main" | "others"
+  ) => (
+    <ul className="flex flex-col gap-4">
+      {navItems.map((nav, index) => (
+        <li key={nav.name}>
+          {nav.subItems ? (
+            <button
+              onClick={() => handleSubmenuToggle(index, menuType)}
+              className={`menu-item group  ${
+                openSubmenu?.type === menuType && openSubmenu?.index === index
+                  ? "menu-item-active"
+                  : "menu-item-inactive"
+              } cursor-pointer ${
+                !isExpanded && !isHovered
+                  ? "lg:justify-center"
+                  : "lg:justify-start"
+              }`}
+            >
+              <span
+                className={` ${
+                  openSubmenu?.type === menuType && openSubmenu?.index === index
+                    ? "menu-item-icon-active"
+                    : "menu-item-icon-inactive"
+                }`}
+              >
+                <img src={nav.icon} alt="" className="h-5 w-5" />
+              </span>
+              {(isExpanded || isHovered || isMobileOpen) && (
+                <span className={`menu-item-text`}>{nav.name}</span>
+              )}
+              {(isExpanded || isHovered || isMobileOpen) && (
+                <img
+                  src={ChevronDownIcon}
+                  alt=""
+                  className={`ml-auto w-5 h-5 transition-transform duration-200  ${
+                    openSubmenu?.type === menuType &&
+                    openSubmenu?.index === index
+                      ? "rotate-180 text-brand-500"
+                      : ""
+                  }`}
+                />
+              )}
+            </button>
+          ) : (
+            nav.path && (
+              <Link
+                to={nav.path}
+                className={`menu-item group ${
+                  isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+                }`}
+              >
+                <span
+                  className={`${
+                    isActive(nav.path)
+                      ? "menu-item-icon-active"
+                      : "menu-item-icon-inactive"
+                  }`}
+                >
+                  <img src={nav.icon as string} alt="" className="h-5 w-5" />
+                </span>
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <span className={`menu-item-text`}>{nav.name}</span>
+                )}
+              </Link>
+            )
+          )}
+          {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
+            <div
+              ref={(el) => {
+                subMenuRefs.current[`${menuType}-${index}`] = el;
+              }}
+              className="overflow-hidden transition-all duration-300"
+              style={{
+                height:
+                  openSubmenu?.type === menuType && openSubmenu?.index === index
+                    ? `${subMenuHeight[`${menuType}-${index}`]}px`
+                    : "0px",
+              }}
+            >
+              <ul className="mt-2 space-y-1 ml-9">
+                {nav.subItems.map((subItem) => (
+                  <li key={subItem.name}>
+                    <Link
+                      to={subItem.path}
+                      className={`menu-dropdown-item ${
+                        isActive(subItem.path)
+                          ? "menu-dropdown-item-active"
+                          : "menu-dropdown-item-inactive"
+                      }`}
+                    >
+                      {subItem.name}
+                      <span className="flex items-center gap-1 ml-auto">
+                        {subItem.new && (
+                          <span
+                            className={`ml-auto ${
+                              isActive(subItem.path)
+                                ? "menu-dropdown-badge-active"
+                                : "menu-dropdown-badge-inactive"
+                            } menu-dropdown-badge `}
+                          >
+                            new
+                          </span>
+                        )}
+                        {subItem.pro && (
+                          <span
+                            className={`ml-auto ${
+                              isActive(subItem.path)
+                                ? "menu-dropdown-badge-active"
+                                : "menu-dropdown-badge-inactive"
+                            } menu-dropdown-badge `}
+                          >
+                            pro
+                          </span>
+                        )}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+
+  const [openSubmenu, setOpenSubmenu] = useState<{
+    type: "main" | "others";
+    index: number;
+  } | null>(null);
+  const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
+    {}
+  );
+  const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // const isActive = (path: string) => path === pathname;
+   const isActive = useCallback((path: string) => path === pathname, [pathname]);
+
+  useEffect(() => {
+    // Check if the current path matches any submenu item
+    let submenuMatched = false;
+    ["main", "others"].forEach((menuType) => {
+      const items = menuType === "main" ? navItems : othersItems;
+      items.forEach((nav, index) => {
+        if (nav.subItems) {
+          nav.subItems.forEach((subItem) => {
+            if (isActive(subItem.path)) {
+              setOpenSubmenu({
+                type: menuType as "main" | "others",
+                index,
+              });
+              submenuMatched = true;
+            }
+          });
+        }
+      });
+    });
+
+    // If no submenu item matches, close the open submenu
+    if (!submenuMatched) {
+      setOpenSubmenu(null);
+    }
+  }, [pathname,isActive]);
+
+  useEffect(() => {
+    // Set the height of the submenu items when the submenu is opened
+    if (openSubmenu !== null) {
+      const key = `${openSubmenu.type}-${openSubmenu.index}`;
+      if (subMenuRefs.current[key]) {
+        setSubMenuHeight((prevHeights) => ({
+          ...prevHeights,
+          [key]: subMenuRefs.current[key]?.scrollHeight || 0,
+        }));
+      }
+    }
+  }, [openSubmenu]);
+
+  const handleSubmenuToggle = (index: number, menuType: "main" | "others") => {
+    setOpenSubmenu((prevOpenSubmenu) => {
+      if (
+        prevOpenSubmenu &&
+        prevOpenSubmenu.type === menuType &&
+        prevOpenSubmenu.index === index
+      ) {
+        return null;
+      }
+      return { type: menuType, index };
+    });
+  };
+
   return (
-    <div className={[baseClasses, inactive].join(' ')}>
-      <span className="h-4 w-4 text-current">{icon}</span>
-      <span>{label}</span>
-    </div>
+    <aside
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
+        ${
+          isExpanded || isMobileOpen
+            ? "w-[290px]"
+            : isHovered
+            ? "w-[290px]"
+            : "w-[90px]"
+        }
+        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+        lg:translate-x-0`}
+      onMouseEnter={() => !isExpanded && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        className={`py-4.5  flex  ${
+          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+        }`}
+      >
+        <Link to="/">
+          {isExpanded || isHovered || isMobileOpen ? (
+            <>
+              <img
+                className="dark:hidden ml-1 "
+                src="/images/logo/logo.svg"
+                alt="Logo"
+                width={150}
+                height={40}
+              />
+              <img
+                className="hidden dark:block"
+                src="/images/logo/logo-dark.svg"
+                alt="Logo"
+                width={150}
+                height={40}
+              />
+            </>
+          ) : (
+<button
+  className="relative z-50 flex h-11 mb-0 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-50 to-blue-100 p-2.5 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 focus:outline-none border border-violet-200/50 backdrop-blur-sm group"
+  aria-label="Toggle Menu"
+>
+  <svg
+    viewBox="0 0 100 100"
+    className="h-7 w-7 text-blue-600 transition-all duration-500 ease-out"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Liquid morphing lines */}
+    <rect
+      className="origin-center transition-all duration-700 ease-[cubic-bezier(0.68,-0.55,0.265,1.55)] rotate-45 translate-y-[22px] scale-110"
+      y="20"
+      width="100"
+      height="6"
+      rx="8"
+      fill="url(#gradient1)"
+    />
+    <rect
+      className="origin-center transition-all duration-500 ease-out opacity-0 scale-0 rotate-180"
+      y="47"
+      width="100"
+      height="6"
+      rx="8"
+      fill="url(#gradient2)"
+    />
+    <rect
+      className="origin-center transition-all duration-700 ease-[cubic-bezier(0.68,-0.55,0.265,1.55)] -rotate-45 -translate-y-[22px] scale-110"
+      y="74"
+      width="100"
+      height="6"
+      rx="8"
+      fill="url(#gradient3)"
+    />
+    
+    {/* Beautiful gradients */}
+    <defs>
+      <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#ec4899" />
+        <stop offset="100%" stopColor="#8b5cf6" />
+      </linearGradient>
+      <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#06b6d4" />
+        <stop offset="100%" stopColor="#3b82f6" />
+      </linearGradient>
+      <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#8b5cf6" />
+        <stop offset="100%" stopColor="#ec4899" />
+      </linearGradient>
+    </defs>
+  </svg>
+  
+  {/* Floating orbs for magical effect */}
+  <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+    <div className="absolute top-2 right-2 h-1 w-1 bg-pink-400 rounded-full opacity-0 transition-all duration-1000 group-hover:opacity-100 group-hover:animate-bounce" />
+    <div className="absolute bottom-1 left-2 h-0.5 w-0.5 bg-violet-400 rounded-full opacity-0 transition-all duration-1200 delay-200 group-hover:opacity-100 group-hover:animate-ping" />
+  </div>
+</button>
+
+
+          )}
+        </Link>
+      </div>
+      <div className="flex mt-15 flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+        <nav className="mb-6">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                  !isExpanded && !isHovered
+                    ? "lg:justify-center"
+                    : "justify-start"
+                }`}
+              >
+                {isExpanded || isHovered || isMobileOpen ? (
+                  "Dashboard"
+                ) : (
+                  <img src={HorizontaLDots} alt="menu" className="h-4 w-4" />
+                )}
+              </h2>
+              {renderMenuItems(navItems, "main")}
+            </div>
+
+            <div className="">
+              <h2
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                  !isExpanded && !isHovered
+                    ? "lg:justify-center"
+                    : "justify-start"
+                }`}
+              >
+                {isExpanded || isHovered || isMobileOpen ? (
+                  "Others"
+                ) : (
+                  <img src={HorizontaLDots} alt="menu" className="h-4 w-4" />
+                )}
+              </h2>
+              {renderMenuItems(othersItems, "others")}
+            </div>
+          </div>
+        </nav>
+         {/* #TODO {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */} 
+         
+      </div>
+    </aside>
   );
 };
 
-export default function Sidebar() {
-  return (
-    <aside className="hidden md:flex md:flex-col w-64 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 gap-2">
-      <div className="mb-2 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Overview</div>
-      <NavItem label="Dashboard" to="/" />
-      <NavItem label="Analytics" />
-      <NavItem label="Orders" />
-      <NavItem label="Customers" />
-
-      <div className="mt-6 mb-2 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Settings</div>
-      <NavItem label="Profile" to="/profile" />
-      <NavItem label="Billing" />
-      <NavItem label="Team" />
-    </aside>
-  );
-}
+export default Sidebar;
