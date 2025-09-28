@@ -1,8 +1,8 @@
 "use client";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "../context/SidebarContext";
-import { PageIcon, TableIcon, FileIcon, HorizontaLDots } from "../icons/index";
+import { PageIcon, TableIcon, FileIcon, HorizontaLDots, ChevronDownIcon } from "../icons/index";
 
 type NavItem = {
   name: string;
@@ -15,33 +15,24 @@ const navItems: NavItem[] = [
   { icon: TableIcon, name: "Table", path: "/table" },
   { icon: FileIcon, name: "Detail", path: "/detail" },
 ];
-
 const Sidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = useLocation().pathname;
+  const [open, setOpen] = useState(false);
 
   const renderMenuItems = (items: NavItem[]) => (
-    <ul className="flex flex-col gap-4">
+    <ul className="flex flex-col gap-1 ml-9">
       {items.map((item) => (
         <li key={item.name}>
           <Link
             to={item.path}
-            className={`menu-item group ${
-              isActive(item.path) ? "menu-item-active" : "menu-item-inactive"
+            className={`menu-dropdown-item ${
+              isActive(item.path)
+                ? "menu-dropdown-item-active"
+                : "menu-dropdown-item-inactive"
             }`}
           >
-            <span
-              className={`${
-                isActive(item.path)
-                  ? "menu-item-icon-active"
-                  : "menu-item-icon-inactive"
-              }`}
-            >
-              <img src={item.icon} alt="" className="h-5 w-5" />
-            </span>
-            {(isExpanded || isHovered || isMobileOpen) && (
-              <span className={`menu-item-text`}>{item.name}</span>
-            )}
+            {item.name}
           </Link>
         </li>
       ))}
@@ -68,9 +59,7 @@ const Sidebar: React.FC = () => {
       <nav className="flex flex-col">
         <h2
           className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-            !isExpanded && !isHovered
-              ? "lg:justify-center"
-              : "justify-start"
+            !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
           }`}
         >
           {isExpanded || isHovered || isMobileOpen ? (
@@ -79,10 +68,54 @@ const Sidebar: React.FC = () => {
             <img src={HorizontaLDots} alt="menu" className="h-4 w-4" />
           )}
         </h2>
-        {renderMenuItems(navItems)}
+
+        {/* Dropdown group */}
+        <DropdownGroup
+          label="Examples"
+          icon={PageIcon}
+          isExpanded={isExpanded || isHovered || isMobileOpen}
+        >
+          {renderMenuItems(navItems)}
+        </DropdownGroup>
       </nav>
     </aside>
   );
 };
 
 export default Sidebar;
+
+type DropdownGroupProps = {
+  label: string;
+  icon: string;
+  isExpanded: boolean;
+  children: React.ReactNode;
+};
+
+function DropdownGroup({ label, icon, isExpanded, children }: DropdownGroupProps) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`menu-item group ${open ? "menu-item-active" : "menu-item-inactive"} ${
+          !isExpanded ? "lg:justify-center" : "lg:justify-start"
+        }`}
+      >
+        <span className={`${open ? "menu-item-icon-active" : "menu-item-icon-inactive"}`}>
+          <img src={icon} alt="" className="h-5 w-5" />
+        </span>
+        {isExpanded && <span className={`menu-item-text`}>{label}</span>}
+        {isExpanded && (
+          <img
+            src={ChevronDownIcon}
+            alt=""
+            className={`ml-auto w-5 h-5 transition-transform duration-200 ${
+              open ? "rotate-180 text-brand-500" : ""
+            }`}
+          />
+        )}
+      </button>
+      {isExpanded && open && <div className="mt-2">{children}</div>}
+    </div>
+  );
+}
