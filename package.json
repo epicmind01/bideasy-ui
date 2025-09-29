@@ -13,6 +13,9 @@
     "@fontsource-variable/outfit": "^5.2.8",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
+    "@radix-ui/react-select": "^2.2.6",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3"

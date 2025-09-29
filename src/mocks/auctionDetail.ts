@@ -1,0 +1,77 @@
+// Mock data saved from user-provided response (trimmed to key fields for UI rendering)
+export const auctionDetail = {
+  id: "68d6018e5968712dff38bd9f",
+  buyerId: "68792c01a76f0bcb784520d5",
+  name: "Auction for HVAC",
+  startTime: "2025-09-26T03:15:00.000Z",
+  endTime: "2025-09-26T03:45:10.000Z",
+  status: "CLOSED",
+  eventCode: "AUC000045",
+  itemType: "GOODS",
+  auctionBehavior: "PROJECT_AUCTION",
+  leadingPrice: 149457250,
+  winnerAnnounced: "MANUAL",
+  auctionInfo: {
+    itemHasFirstQuote: true,
+    bidderCanBidAgainst: "SELF_PRICE",
+    displayLeadingPriceToVendors: true,
+    minBidDifference: 500000,
+    minBidDifferenceContractors: 1000,
+    minBidDifferenceSelf: 1000,
+    maxBidDifferenceEnabled: true,
+    maxBidDifferencePrice: 500000,
+    reserveBuyingSellingPrice: null,
+    reservedBuyingSelling: "INDICATIVE",
+    participationRankDisplay: "SHOW_TO_ALL",
+    singleBidEnabled: false,
+    maskVendorCompanyNames: false,
+    isVendorBidPriceMasked: false,
+  },
+  itemsSheets: [
+    {
+      id: "68d604195968712dff38bdae",
+      name: "VRV WORKS",
+      position: 2,
+      installationPrice: true,
+      itemHeaders: [
+        { name: "SL.NO", type: "text", position: 0 },
+        { name: "DESCRIPTION OF WORK", type: "text", position: 1 },
+        { name: "UNITS", type: "text", position: 2 },
+        { name: "Remarks", type: "text", position: 3 },
+        { name: "quantity", type: "number", position: 4 },
+      ],
+      items: [
+        {
+          id: "68d604195968712dff38be75",
+          data: {
+            "SL.NO": "1",
+            "DESCRIPTION OF WORK": "OUTDOOR UNIT FOR VRV SYSTEM",
+            "UNITS": "",
+            "Remarks": "",
+            "quantity": 0,
+          },
+        },
+        {
+          id: "68d604195968712dff38be80",
+          data: {
+            "SL.NO": "1.4",
+            "DESCRIPTION OF WORK": "16 HP ( 13 TR )",
+            "UNITS": "Nos.",
+            "Remarks": "",
+            "quantity": "5",
+          },
+        },
+        {
+          id: "68d604195968712dff38be9a",
+          data: {
+            "SL.NO": "3.2",
+            "DESCRIPTION OF WORK": "CASSETTE UNIT",
+            "UNITS": "",
+            "Remarks": "",
+            "quantity": 0,
+          },
+        },
+      ],
+    },
+  ],
+};
