@@ -84,20 +84,18 @@ const Header: React.FC = () => {
           </button>
 
           <Link to="/" className="lg:hidden">
-            <img
-              width={154}
-              height={32}
-              className="dark:hidden"
-              src="./images/logo/logo.svg"
-              alt="Logo"
-            />
-            <img
-              width={154}
-              height={32}
-              className="hidden dark:block"
-              src="./images/logo/logo-dark.svg"
-              alt="Logo"
-            />
+            <picture>
+              <source srcSet="/images/logo/logo-dark.svg" media="(prefers-color-scheme: dark)" />
+              <img
+                width={154}
+                height={32}
+                src="/images/logo/logo.svg"
+                alt="Logo"
+                loading="eager"
+                decoding="async"
+                className="h-8 w-auto"
+              />
+            </picture>
           </Link>
 
           <button
@@ -129,7 +127,7 @@ const Header: React.FC = () => {
             {/* <!-- Notification Menu Area --> */}
           </div >
          
-         {/* <div className="hidden lg:block">
+         <div className="hidden lg:block">
   <div className="relative">
     <span className="absolute -translate-y-1/2 left-4 top-1/2 pointer-events-none">
       <svg
@@ -148,14 +146,10 @@ const Header: React.FC = () => {
       </svg>
     </span>
     <div className="dark:bg-dark-900 h-11 w-auto xl:w-auto rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-4 text-sm text-gray-800 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 flex items-center">
-      {hasMounted && (
-  <div className="...">
-    {formatted}
-  </div>
-)}
+  
     </div>
   </div>
-</div> */}
+</div>
 
         </div>
          <div

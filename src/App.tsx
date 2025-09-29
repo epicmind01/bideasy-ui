@@ -1,20 +1,20 @@
-import Header from './components/Header'
-import Sidebar from './components/Sidebar'
-import { Outlet } from 'react-router-dom'
-import { SidebarProvider } from './context/SidebarContext'
-import { RegionProvider } from './context/RegionContext'
-import { useSidebar } from './context/SidebarContext'
+import { Outlet } from 'react-router-dom';
+import { SidebarProvider, useSidebar } from './context/SidebarContext';
+import { RegionProvider } from './context/RegionContext';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 
-function AppShell() {
+export function AppShell() {
   const { isExpanded, isHovered } = useSidebar();
   const contentShiftClass = (isExpanded || isHovered) ? 'lg:ml-[290px]' : 'lg:ml-[90px]';
+  
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <Sidebar />
       <div className={`transition-all duration-300 ${contentShiftClass}`}>
         <Header />
         <div className="flex">
-          <main className="flex-1 p-4 md:p-6">
+          <main className="flex-1 p-4 md:p-6 w-full">
             <Outlet />
           </main>
         </div>
@@ -23,14 +23,13 @@ function AppShell() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <SidebarProvider>
       <RegionProvider>
         <AppShell />
       </RegionProvider>
     </SidebarProvider>
-  )
+  );
 }
 
-export default App
