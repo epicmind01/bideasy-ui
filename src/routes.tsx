@@ -1,8 +1,7 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import App from './App';
-
+import { useAuth } from './hooks/API/useAuth';
 // Lazy load components
 const LoginForm = lazy(() => import('./pages/Auth/Login'));
 const Table = lazy(() => import('./pages/Table'));
@@ -10,17 +9,11 @@ const Detail = lazy(() => import('./pages/Detail'));
 
 // Auth wrapper component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isLoggedIn, isChecking } = useAuth();
 
-  if (isChecking) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  const { isAuthenticated } = useAuth();
 
-  if (!isLoggedIn) {
+  console.log("isAuthenticated", isAuthenticated());
+  if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
 

@@ -1,23 +1,18 @@
 "use client";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from '../../hooks/useAuth';
 import { ChevronLastIcon, Eye, EyeClosed } from "lucide-react";
-
+import { useAuth } from "../../hooks/API/useAuth";
 
 export default function LoginForm() {
-  const { login } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Static credentials for testing
-  const STATIC_CREDENTIALS = {
-    email: 'admin@bideasy.com',
-    password: 'password123'
-  };
+
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -28,57 +23,18 @@ export default function LoginForm() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-
-    // Check against static credentials
-    if (email === STATIC_CREDENTIALS.email && password === STATIC_CREDENTIALS.password) {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return;
-    }
-
-    // If credentials don't match
-    setError('Invalid email or password');
-    setLoading(false);
     try {
-      const response = await fetch('http://localhost:8000/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('user', JSON.stringify(data.user));
-        login();
-      } else {
-        const errorData = await response.json();
-
-        if (Array.isArray(errorData.detail)) {
-          const emailError = errorData.detail.find((err: any) => err.loc.includes('email'));
-          if (emailError) {
-            setError('Please enter a valid email address.');
-          } else {
-            const messages = errorData.detail.map((err: any) => err.msg).join('\n');
-            setError(messages);
-          }
-        } else if (typeof errorData.detail === 'string') {
-          setError(errorData.detail);
-        } else {
-          setError('Login failed');
-        }
-      }
-    } catch (err: unknown) {
+      await login(email, password);
+      window.location.href = "/dashboard";
+    } catch (err) {
       if (err instanceof Error) {
-        setError('Network error. Please try again.');
+        setError(err.message);
       } else {
-        setError('An unexpected error occurred.');
+        setError("Something went wrong");
       }
-    } finally {
-      setLoading(false);
     }
+
+
 };
 
   return (
