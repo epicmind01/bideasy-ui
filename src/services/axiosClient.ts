@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_URL = "http://localhost:3000/api/v1";
 
-const axiosClient = axios.create({
+const client = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
@@ -10,7 +10,7 @@ const axiosClient = axios.create({
 });
 
 // 🔑 Add token automatically if available
-axiosClient.interceptors.request.use((config) => {
+client.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -19,7 +19,7 @@ axiosClient.interceptors.request.use((config) => {
 });
 
 // 🚨 Optionally handle 401 Unauthorized globally
-axiosClient.interceptors.response.use(
+client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
@@ -30,4 +30,4 @@ axiosClient.interceptors.response.use(
   }
 );
 
-export default axiosClient;
+export default client;

@@ -325,7 +325,7 @@ NotificationContentList:'/master/notification-content',
     buyers : '/master/active/buyers',
     Manufacturer:'/master/active/manufacturers',
     permission:'/master/active/permissions',
-
+    manufacturers:'/master/active/manufacturers',
   },
 // ======================================= Vendor API ===============================================
 

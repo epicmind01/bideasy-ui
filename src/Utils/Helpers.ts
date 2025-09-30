@@ -1,4 +1,4 @@
-const LOCAL_STORAGE_KEYS = {
+export const LOCAL_STORAGE_KEYS = {
     TOKEN: 'token',
     USER_TYPE: 'userType',
     USER: 'user',
@@ -30,4 +30,14 @@ export const setLocalItem = (key: string, value: any) => {
     removeLocalItem(LOCAL_STORAGE_KEYS.USER_TYPE);
     removeLocalItem(LOCAL_STORAGE_KEYS.PERMISSIONS);
   };
-  
+  // Helper function to check if a user has a specific permission
+export const hasPermission = (required: string) => {
+  const permissions = getLocalItem(LOCAL_STORAGE_KEYS.PERMISSIONS);
+  return permissions?.includes(required);
+};
+
+// Helper function to check if a user has any of the required permissions
+export const hasAnyPermission = (requiredList: string[]) => {
+  const permissions = getLocalItem(LOCAL_STORAGE_KEYS.PERMISSIONS);
+  return requiredList.some((perm) => permissions?.includes(perm));
+};
