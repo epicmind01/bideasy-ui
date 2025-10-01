@@ -8,6 +8,7 @@ import {
     type SortingState,
     flexRender,
     getFilteredRowModel,
+    type ColumnResizeMode,
   } from '@tanstack/react-table';
   import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
   import { format } from 'date-fns';
@@ -18,18 +19,24 @@ import {
   // Table components
   const Table = ({ children, className = '' }: { children: ReactNode; className?: string }) => (
     <div className={`w-full overflow-auto ${className}`}>
-      <table className="w-full">{children}</table>
+      <div className="inline-block min-w-full align-middle">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse border border-gray-200 dark:border-gray-700">
+            {children}
+          </table>
+        </div>
+      </div>
     </div>
   );
   
   const TableHeader = ({ children }: { children: ReactNode }) => (
-    <thead className="bg-brand-100 dark:bg-brand-600/30 [&_th]:font-semibold [&_th]:text-gray-800 dark:[&_th]:text-white [&_th]:py-3 [&_th]:px-4 [&_th]:text-left [&_th]:text-sm">
+    <thead className="bg-brand-100 dark:bg-brand-600/30">
       {children}
     </thead>
   );
   
   const TableBody = ({ children }: { children: ReactNode }) => (
-    <tbody className="[&_td]:py-3 [&_td]:px-4 [&_td]:text-sm [&_td]:text-gray-700 dark:[&_td]:text-gray-300 bg-white dark:bg-gray-800/50 divide-y divide-gray-100 dark:divide-gray-700/50">
+    <tbody className="[&_td]:py-3 [&_td]:px-4 [&_td]:text-sm [&_td]:text-gray-700 dark:[&_td]:text-gray-300 [&_td]:border-r [&_td]:border-gray-100 dark:[&_td]:border-gray-700/50 bg-white dark:bg-gray-800/50 divide-y divide-gray-100 dark:divide-gray-700/50">
       {children}
     </tbody>
   );
@@ -98,11 +105,13 @@ import {
     data = [],
     totalItems = 0,
     isLoading = false,
-    onPageChange,
+    onPageChange = () => {},
     onRowClick,
     pageSize: externalPageSize = 10,
     currentPage: externalCurrentPage = 1,
   }: DataTableProps<TData>) {
+    const columnResizeMode = 'onChange' as const;
+    const columnResizeDirection = 'ltr' as const;
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [pagination, setPagination] = useState<PaginationState>({
@@ -125,6 +134,8 @@ import {
     const table = useReactTable({
       data,
       columns,
+      columnResizeMode: 'onChange',
+      columnResizeDirection: 'ltr',
       state: {
         sorting,
         columnFilters,
@@ -132,6 +143,11 @@ import {
           pageIndex: Math.max(0, Math.min(pagination.pageIndex, Math.ceil(totalItems / pagination.pageSize) - 1)),
           pageSize: pagination.pageSize,
         },
+      },
+      defaultColumn: {
+        size: 150,
+        minSize: 50,
+        maxSize: 1000,
       },
       pageCount: Math.ceil(totalItems / pagination.pageSize) || 1,
       onSortingChange: setSorting,
@@ -163,6 +179,7 @@ import {
       setPagination(prev => ({
         ...prev,
         pageIndex: newPageIndex,
+        pageSize: pagination.pageSize,
       }));
       setCurrentPage(newPageIndex + 1);
       onPageChange?.(newPageIndex + 1);
@@ -182,18 +199,38 @@ import {
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+                <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableCell key={header.id} isHeader>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
+                    <th
+                      key={header.id}
+                      className="relative group font-semibold text-gray-800 dark:text-white py-3 px-4 text-left text-sm select-none border-r border-gray-200 dark:border-gray-700"
+                      colSpan={header.colSpan}
+                      style={{
+                        width: header.getSize(),
+                        position: 'relative',
+                      }}
+                    >
+                      {header.isPlaceholder ? null : (
+                        <div className="flex items-center justify-between">
+                          {flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                    </TableCell>
+                        </div>
+                      )}
+                      <div
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        className={`absolute right-0 top-0 h-full w-1.5 cursor-col-resize select-none touch-none
+                          bg-gray-200 hover:bg-brand-500 active:bg-brand-600 dark:bg-gray-600 dark:hover:bg-brand-400 dark:active:bg-brand-300`}
+                        style={{
+                          transform: 'translateX(50%)',
+                          zIndex: 10,
+                        }}
+                      />
+                    </th>
                   ))}
-                </TableRow>
+                </tr>
               ))}
             </TableHeader>
             <TableBody>
@@ -206,10 +243,7 @@ import {
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
                   </TableRow>

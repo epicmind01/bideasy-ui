@@ -232,7 +232,6 @@ const AuctionList = () => {
                 { label: 'Awarded', key: 'totalAwarded' }
               ].map(({ label, key }) => {
                 const count = (auctionData?.[key as keyof typeof auctionData] as number) ?? 0;
-                const isActive = activeTab === label;
                 
                 return (
                   <button
