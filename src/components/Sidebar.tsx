@@ -7,7 +7,12 @@ import {
   CalenderIcon,
   ChevronDownIcon,
   GridIcon,
-  HorizontaLDots
+  HorizontaLDots,
+  UserIcon,
+  GroupIcon,
+  FileIcon,
+  PieChartIcon,
+  ListIcon
 } from "../icons/index";
 
 type NavItem = {
@@ -19,24 +24,24 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    icon: GridIcon,
+    icon: GroupIcon,
     name: "Supplier Lifecycle",
     subItems: [
                { name: "Supplier Approvals", path: "/supplierApprovals", pro: false }, 
                { name: "Supplier Management", path: "/inventoryValuation", pro: false }
               ],
   },
-   {
-    icon: CalenderIcon,
+  {
+    icon: BoxCubeIcon,
     name: "PROCUREMENT",
     subItems: [
                { name: "RFQ", path: "/salesQuantityForecast", pro: false }, 
-               { name: "AUCTION", path: "/cashFlowForecast", pro: false },
+               { name: "AUCTION", path: "/auction", pro: false },
                { name: "RA Bills", path: "/stockReplenishmentForecast", pro: false },
               ],
   },
   {
-    icon: CalenderIcon,
+    icon: FileIcon,
     name: "ORDER MANAGE",
     subItems: [
                { name: "PR", path: "/salesQuantityForecast", pro: false }, 
@@ -47,7 +52,7 @@ const navItems: NavItem[] = [
               ],
   },
   {
-    icon: CalenderIcon,
+    icon: FileIcon,
     name: "CONTRACT MANAGE",
     subItems: [
                { name: "ARC", path: "/stockReplenishmentForecast", pro: false },
@@ -58,12 +63,12 @@ const navItems: NavItem[] = [
 
 const othersItems: NavItem[] = [
   {
-    icon: BoxCubeIcon,
+    icon: PieChartIcon,
     name: "Reports",
     path: "/reports",
   },
   {
-    icon: BoxCubeIcon,
+    icon: ListIcon,
     name: "Master",
     path: "/master",
   },

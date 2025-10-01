@@ -132,8 +132,9 @@ uploadApprovalDocuments:'/invoice/upload-approval-documents',
 
   //Auction 
   auction:{
-    auctionbyId : '/auction',
-    auctionList:'/auction',
+    details : '/auction',
+    list:'/auction',
+    delete : '/auction',
     exportAuctionList:'/export-auctions',
     createAuctionApi:'/auction',
     templateApi:'/auction/template',

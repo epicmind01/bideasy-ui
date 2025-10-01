@@ -2,7 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import App from './App';
 import { useAuth } from './hooks/API/useAuth';
-import MasterDashboard from './pages/Master/Dashboad';
+import MasterDashboard from './pages/Master/Dashboard';
+import AuctionList from './pages/Auction/AuctionList';
 // Lazy load components
 const LoginForm = lazy(() => import('./pages/Auth/Login'));
 const Table = lazy(() => import('./pages/Table'));
@@ -45,6 +46,16 @@ export const router = createBrowserRouter([
           <ProtectedRoute>
             <Suspense fallback={<div>Loading...</div>}>
               <Table />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'auction',
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AuctionList />
             </Suspense>
           </ProtectedRoute>
         ),
