@@ -15,9 +15,17 @@ export const setLocalItem = (key: string, value: any) => {
   };
   
   export const getLocalItem = (key: string): any => {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : null;
-  };
+  const value = localStorage.getItem(key);
+  if (value === null) return null;
+  
+  try {
+    // Try to parse as JSON, but return as-is if it's not valid JSON (like JWT tokens)
+    return JSON.parse(value);
+  } catch (e) {
+    // If it's not valid JSON, return the raw string
+    return value;
+  }
+};
   
   export const removeLocalItem = (key: string) => {
     localStorage.removeItem(key);

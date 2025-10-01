@@ -1,7 +1,7 @@
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import InfoCard from "./InfoCard";
 import { useGetMasterCountApi } from "../../hooks/API/useCommonApis";
-import { useState, useEffect } from "react"; // Add useEffect
 import ExcelUploadModal from "./ExcelUploadModal";
 import { Input } from "../../components/ui/input";
 import { Download } from "lucide-react";
@@ -36,22 +36,29 @@ const MasterDashboard = () => {
     setIsExcelModalOpen(false);
   };
 
-  // Add loading and error states
+  const filteredGroups = React.useMemo(() => {
+    if (!getCardsRecords?.data) return [];
+    
+    return getCardsRecords.data.map((group) => ({
+      ...group,
+      items: group.items.filter((item) =>
+        item.title.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    }));
+  }, [getCardsRecords?.data, searchTerm]);
+
+  // Render loading state
   if (isLoading) {
-    return <div>Loading master data...</div>;
+    return <div className="container mx-auto p-4">Loading master data...</div>;
   }
 
-  if (isError || !getCardsRecords) {
-    return <div>Error loading master data. Please try again.</div>;
+  // Render error state
+  if (isError) {
+    console.log(isError);
+    return <div className="container mx-auto p-4">Error loading master data. Please try again.</div>;
   }
 
-  const filteredGroups = getCardsRecords.map((group: any) => ({
-    ...group,
-    items: group.items.filter((item: any) =>
-      item.title.toLowerCase().includes(searchTerm.toLowerCase())
-    ),
-  }));
-
+  // Render main content
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">

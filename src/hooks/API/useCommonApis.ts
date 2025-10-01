@@ -8,32 +8,61 @@ import type {
   CityResponse,
   countryResData,
   ManufacturerRes,
-  masterCountResponce,
   MaterialGroup,
   StateResponse,
 } from "../../Typings/MasterApiTypes";
 
+export interface MasterCountResponse {
+  message: string;
+  data: Array<{
+    groupTitle: string;
+    items: Array<{
+      title: string;
+      count: number;
+      path: string;
+      allowPermission: string[];
+      icon: React.ReactNode;
+      accentColor: string;
+      iconBgColor: string;
+      subtitle?: string;
+    }>;
+  }>;
+}
+
 export const useGetMasterCountApi = () => {
-    return useQuery<masterCountResponce>({
-      queryKey: ["MasterCount"],
-      queryFn: async (): Promise<masterCountResponce> => {
-        const res = await client.get<masterCountResponce>(
+  return useQuery<MasterCountResponse>({
+    queryKey: ["MasterCount"],
+    queryFn: async (): Promise<MasterCountResponse> => {
+      try {
+        const token = getLocalItem(LOCAL_STORAGE_KEYS.TOKEN);       
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+
+        const response = await client.get<MasterCountResponse>(
           ENDPOINTS.Common.count,
           {
             headers: {
-              Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
-        return res.data; // ✅ return data, not AxiosResponse
+        if (!response.data) {
+          throw new Error("No data received from server");
+        }
+        return response.data;
+      } catch (error) {
+        console.error("API Error:", error);
+        throw error;
+      }
+    },
+    meta: {
+      onError: (error: unknown) => {
+        console.error("Query Error in meta:", error);
       },
-      meta: {
-        onError: (error: unknown) => {
-          console.error("Query Error:", error);
-        },
-      },
-    });
-  };
+    },
+  });
+};
 // ✅ Get All Cities
 export const useGetCityApi = () => {
     return useQuery<CityResponse[]>({
