@@ -6,9 +6,9 @@ import {
     type ColumnFiltersState,
     type PaginationState,
     type SortingState,
+    type RowSelectionState,
     flexRender,
-    getFilteredRowModel,
-    type ColumnResizeMode,
+    getFilteredRowModel
   } from '@tanstack/react-table';
   import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
   import { format } from 'date-fns';
@@ -95,7 +95,10 @@ import {
     totalItems?: number;
     isLoading?: boolean;
     onPageChange?: (page: number) => void;
+    onPageSizeChange?: (pageSize: number) => void;
     onRowClick?: (row: TData) => void;
+    onRowSelectionChange?: (selection: any) => void;
+    rowSelection?: any;
     pageSize?: number;
     currentPage?: number;
   }
@@ -106,178 +109,178 @@ import {
     totalItems = 0,
     isLoading = false,
     onPageChange = () => {},
+    onPageSizeChange = () => {},
     onRowClick,
+    onRowSelectionChange = () => {},
+    rowSelection = {},
     pageSize: externalPageSize = 10,
     currentPage: externalCurrentPage = 1,
   }: DataTableProps<TData>) {
-    const columnResizeMode = 'onChange' as const;
-    const columnResizeDirection = 'ltr' as const;
+    // Check if checkbox column already exists
+    const hasCheckboxColumn = columns.some(col => (col as any).id === 'select');
+    
+    // Only add checkbox column if it doesn't exist
+    const columnsWithCheckbox = hasCheckboxColumn 
+      ? columns 
+      : [
+          {
+            id: 'select',
+            header: ({ table }: { table: any }) => (
+              <div className="flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={table.getIsAllRowsSelected()}
+                  onChange={table.getToggleAllRowsSelectedHandler()}
+                  className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                />
+              </div>
+            ),
+            cell: ({ row }: { row: any }) => (
+              <div className="flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={row.getIsSelected()}
+                  disabled={!row.getCanSelect()}
+                  onChange={row.getToggleSelectedHandler()}
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                />
+              </div>
+            ),
+            enableSorting: false,
+            enableHiding: false,
+          },
+          ...columns,
+        ];
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>(rowSelection);
+    
+    // Sync external rowSelection with internal state
+    useEffect(() => {
+      setInternalRowSelection(rowSelection);
+    }, [rowSelection]);
     const [pagination, setPagination] = useState<PaginationState>({
       pageIndex: externalCurrentPage - 1, // 0-based for internal use
       pageSize: externalPageSize,
     });
-    const [currentPage, setCurrentPage] = useState<number>(externalCurrentPage);
-  
-    // Update internal state when external props change
-    useEffect(() => {
-      setPagination(prev => ({
-        ...prev,
-        pageIndex: externalCurrentPage - 1,
-        pageSize: externalPageSize,
-      }));
-      setCurrentPage(externalCurrentPage);
-    }, [externalCurrentPage, externalPageSize]);
-  
-    // Initialize table
+
     const table = useReactTable({
       data,
-      columns,
-      columnResizeMode: 'onChange',
-      columnResizeDirection: 'ltr',
+      columns: columnsWithCheckbox,
       state: {
         sorting,
         columnFilters,
-        pagination: {
-          pageIndex: Math.max(0, Math.min(pagination.pageIndex, Math.ceil(totalItems / pagination.pageSize) - 1)),
-          pageSize: pagination.pageSize,
-        },
+        rowSelection: internalRowSelection,
+        pagination,
       },
-      defaultColumn: {
-        size: 150,
-        minSize: 50,
-        maxSize: 1000,
-      },
-      pageCount: Math.ceil(totalItems / pagination.pageSize) || 1,
+      pageCount: Math.ceil(totalItems / pagination.pageSize),
       onSortingChange: setSorting,
       onColumnFiltersChange: setColumnFilters,
-      onPaginationChange: (updater) => {
-        const newPagination = updater instanceof Function ? updater({
-          pageIndex: pagination.pageIndex,
-          pageSize: pagination.pageSize,
-        }) : updater;
-        
-        const newPageIndex = Math.max(0, Math.min(newPagination.pageIndex, Math.ceil(totalItems / newPagination.pageSize) - 1));
-        
-        setPagination({
-          pageIndex: newPageIndex,
-          pageSize: newPagination.pageSize,
-        });
-        
-        setCurrentPage(newPageIndex + 1);
-        onPageChange?.(newPageIndex + 1);
+      onRowSelectionChange: (updater) => {
+        const newSelection = typeof updater === 'function' ? updater(internalRowSelection) : updater;
+        setInternalRowSelection(newSelection);
+        onRowSelectionChange(newSelection);
       },
-      manualPagination: true,
-      getCoreRowModel: getCoreRowModel(),
+      onPaginationChange: setPagination,
       getFilteredRowModel: getFilteredRowModel(),
       getPaginationRowModel: getPaginationRowModel(),
     });
   
-    const handlePageChange = (pageIndex: number) => {
-      const newPageIndex = Math.max(0, Math.min(pageIndex, Math.ceil(totalItems / pagination.pageSize) - 1));
-      setPagination(prev => ({
-        ...prev,
-        pageIndex: newPageIndex,
-        pageSize: pagination.pageSize,
-      }));
-      setCurrentPage(newPageIndex + 1);
-      onPageChange?.(newPageIndex + 1);
+    // Handle page size change
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newSize = Number(e.target.value);
+    const newPagination = {
+      ...pagination,
+      pageSize: newSize,
+      pageIndex: 0, // Reset to first page
     };
-  
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500"></div>
-        </div>
-      );
-    }
-  
-    return (
-      <div className="space-y-4">
-        <div className="rounded-md border dark:border-gray-700">
-          <Table>
+    setPagination(newPagination);
+    onPageSizeChange(newSize);
+    onPageChange(0); // Reset to first page
+
+        {/* Table content */}
+        <div className="border border-gray-200 dark:border-gray-700 rounded-b-lg">
+{{ ... }}
             <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="relative group font-semibold text-gray-800 dark:text-white py-3 px-4 text-left text-sm select-none border-r border-gray-200 dark:border-gray-700"
-                      colSpan={header.colSpan}
-                      style={{
-                        width: header.getSize(),
-                        position: 'relative',
-                      }}
-                    >
-                      {header.isPlaceholder ? null : (
-                        <div className="flex items-center justify-between">
-                          {flexRender(
+              {table.getHeaderGroups().map(headerGroup => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map(header => (
+                    <TableCell key={header.id} isHeader>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                        </div>
-                      )}
-                      <div
-                        onMouseDown={header.getResizeHandler()}
-                        onTouchStart={header.getResizeHandler()}
-                        className={`absolute right-0 top-0 h-full w-1.5 cursor-col-resize select-none touch-none
-                          bg-gray-200 hover:bg-brand-500 active:bg-brand-600 dark:bg-gray-600 dark:hover:bg-brand-400 dark:active:bg-brand-300`}
-                        style={{
-                          transform: 'translateX(50%)',
-                          zIndex: 10,
-                        }}
-                      />
-                    </th>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    onClick={() => onRowClick?.(row.original)}
-                    className={`${onRowClick ? 'cursor-pointer' : ''} hover:bg-brand-50/50 dark:hover:bg-gray-800/80`}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
-                  </TableCell>
+              {table.getRowModel().rows.map(row => (
+                <TableRow 
+                  key={row.id}
+                  onClick={(e) => {
+                    // Only trigger row click if the click is not on a checkbox
+                    const target = e.target as HTMLElement;
+                    if (!target.closest('input[type="checkbox"]')) {
+                      onRowClick?.(row.original);
+                    }
+                  }}
+                  className={onRowClick ? 'cursor-pointer' : ''}
+                >
+                  {row.getVisibleCells().map(cell => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
                 </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
-        </div>
-  
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white dark:bg-gray-900 rounded-b-lg border-t border-gray-200 dark:border-gray-800">
-          <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-            Showing <span className="font-medium">
-              {pagination.pageIndex * pagination.pageSize + 1} -{' '}
-              {Math.min(
-                (pagination.pageIndex + 1) * pagination.pageSize,
-                totalItems
-              )}
-            </span> of <span className="font-medium">{totalItems}</span> results
-          </div>
-          
-          <div className="flex items-center h-full gap-2">
-            <div className="flex items-center h-10 gap-1">
+
+          {/* Pagination */}
+          <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row items-center justify-between p-3 gap-4">
+              <div className="flex-1 flex items-center gap-4">
+                {/* Show entries selector */}
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <span>Show</span>
+                  <select
+                    value={pagination.pageSize}
+                    onChange={handlePageSizeChange}
+                    className="h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  >
+                    {[10, 20, 30, 50, 100].map(size => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                  <span>entries per page</span>
+                </div>
+
+                {/* Records info */}
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Showing <span className="font-medium">
+                    {pagination.pageIndex * pagination.pageSize + 1} to{' '}
+                    {Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalItems)}
+                  </span> of <span className="font-medium">{totalItems}</span> records
+                </div>
+              </div>
+
+              {/* Pagination controls */}
+              <div className="flex items-center gap-1">
+
+            
               <Button
                 variant="outline"
                 size="sm"
                 className="h-10 w-10 flex items-center justify-center m-0 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/80 border-gray-200 dark:border-gray-700"
                 onClick={() => handlePageChange(0)}
-                disabled={!table.getCanPreviousPage()}
+                disabled={pagination.pageIndex === 0}
                 title="First page"
               >
                 <ChevronsLeft className="h-5 w-5" />
@@ -318,7 +321,7 @@ import {
               })}
             </div>
             
-            <div className="flex items-center gap-1">
+            
               <Button
                 variant="outline"
                 size="sm"

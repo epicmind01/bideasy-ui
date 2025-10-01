@@ -28,7 +28,7 @@ export const useGetAuctionListApi = (params?: AuctionListParams) => {
             {
               params: {
                 page: params?.page,
-                pageSize: params?.pageSize,
+                limit: params?.pageSize, // Changed from pageSize to limit
                 search: params?.search,
                 status: params?.status,
               },

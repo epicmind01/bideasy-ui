@@ -4,15 +4,14 @@ import {Link,useLocation} from "react-router-dom";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
-  CalenderIcon,
   ChevronDownIcon,
-  GridIcon,
   HorizontaLDots,
-  UserIcon,
   GroupIcon,
   FileIcon,
   PieChartIcon,
-  ListIcon
+  ListIcon,
+  DocsIcon,
+  PencilIcon
 } from "../icons/index";
 
 type NavItem = {
@@ -52,11 +51,11 @@ const navItems: NavItem[] = [
               ],
   },
   {
-    icon: FileIcon,
+    icon: PencilIcon,
     name: "CONTRACT MANAGE",
     subItems: [
-               { name: "ARC", path: "/stockReplenishmentForecast", pro: false },
-               { name: "CONTRACTS", path: "/stockReplenishmentForecast", pro: false },
+               { name: "ARC", path: "/contracts/arc", pro: false },
+               { name: "CONTRACTS", path: "/contracts", pro: false },
               ],
   },
 ];

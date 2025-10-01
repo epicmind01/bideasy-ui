@@ -2,11 +2,12 @@ import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { type ColumnDef } from '@tanstack/react-table';
+import { Modal } from '../../components/ui/modal/Modal';
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
 import Badge from '../../components/ui/badge/Badge';
-import DataTable from '../../components/ui/data-table/DataTable';
-import { useGetAuctionListApi } from '../../hooks/API/AuctionApi';
+import { DataTable } from '../../components/ui/data-table/DataTableFixed';
+import { useGetAuctionListApi, useDeleteAuctionApi } from '../../hooks/API/AuctionApi';
 import type { AuctionData } from '../../Typings/AuctionTypes';
 
 const AuctionList = () => {
@@ -15,10 +16,16 @@ const AuctionList = () => {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('All');
+  const [searchQuery, _setSearchQuery] = useState('');
+  const [activeTab, _setActiveTab] = useState('All');
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [auctionToDelete, setAuctionToDelete] = useState<AuctionData | null>(null);
   
-  const { data: auctionData, isLoading } = useGetAuctionListApi({
+  // Delete mutation
+  const { mutate: deleteAuction, isPending: isDeleting } = useDeleteAuctionApi();
+  
+  const { data: auctionData, isLoading, refetch } = useGetAuctionListApi({
     page: pagination.pageIndex + 1,
     pageSize: pagination.pageSize,
     search: searchQuery,
@@ -163,14 +170,13 @@ const AuctionList = () => {
                 </svg>
               </button>
               <button
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to delete this auction?')) {
-                    console.log('Delete', row.original.id);
-                    // Add your delete logic here
-                  }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick(row.original);
                 }}
-                className="p-1.5 text-gray-500 hover:text-red-500 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="p-1.5 text-gray-500 hover:text-red-500 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete"
+                disabled={isDeleting}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -183,20 +189,79 @@ const AuctionList = () => {
       [navigate]
     );
   
-    // Handle row click
-  const handleRowClick = useCallback((row: AuctionData) => {
-    navigate(`/auction/${row.id}`);
-  }, [navigate]);
-
-  // Handle page change
+    // Handle page change
   const handlePageChange = useCallback((page: number) => {
     setPagination(prev => ({
       ...prev,
       pageIndex: page - 1
     }));
   }, []);
-  
-    if (isLoading) {
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setPagination(prev => ({
+      ...prev,
+      pageSize,
+      pageIndex: 0 // Reset to first page when changing page size
+    }));
+  }, []);
+
+  // Handle clear selection
+  const handleClearSelection = useCallback(() => {
+    // Reset the row selection state to an empty object
+    setRowSelection({});
+  }, []);
+
+  // Handle delete confirmation
+  const handleDeleteClick = (auction: AuctionData) => {
+    setAuctionToDelete(auction);
+    setDeleteModalOpen(true);
+  };
+
+  // Handle confirm delete
+  const handleConfirmDelete = useCallback(() => {
+    if (!auctionToDelete) return;
+    
+    deleteAuction(auctionToDelete.id, {
+      onSuccess: () => {
+        // Refresh the auction list after successful deletion
+        refetch();
+        // Show success message or toast
+        // You can add a toast notification here if you have one
+      },
+      onError: (error) => {
+        console.error('Failed to delete auction:', error);
+        // Show error message or toast
+      },
+      onSettled: () => {
+        setDeleteModalOpen(false);
+        setAuctionToDelete(null);
+      }
+    });
+  }, [auctionToDelete, deleteAuction, refetch]);
+
+  // Handle export of selected rows
+  const handleExport = useCallback(() => {
+    if (!auctionData?.data) return;
+    
+    // Get the selected rows data
+    const selectedRows = Object.keys(rowSelection).map(rowIndex => 
+      auctionData.data[parseInt(rowIndex, 10)]
+    );
+    
+    if (selectedRows.length === 0) {
+      alert('No items selected for export');
+      return;
+    }
+    
+    // Here you can implement your export logic
+    console.log('Exporting selected rows:', selectedRows);
+    // Example: exportToCSV(selectedRows, 'auction_export.csv');
+    
+    // For now, we'll just show an alert
+    alert(`Exporting ${selectedRows.length} selected items`);
+  }, [rowSelection, auctionData?.data]);
+
+  if (isLoading) {
       return (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -219,17 +284,18 @@ const AuctionList = () => {
           </div>
         </PageHeader>
   
-        {/* Tabs with counts */}
+
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex space-x-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className=" flex space-x-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
               {[
-                { label: 'All', key: 'total' },
+                { label: 'All', key: 'totalAll' },
                 { label: 'Draft', key: 'totalDraft' },
                 { label: 'Scheduled', key: 'totalScheduled' },
                 { label: 'Live', key: 'totalLive' },
                 { label: 'Closed', key: 'totalClosed' },
-                { label: 'Awarded', key: 'totalAwarded' }
+                { label: 'Finalized', key: 'totalFinalized' },
+                { label: 'PO Created', key: 'totalPoCreated' }
               ].map(({ label, key }) => {
                 const count = (auctionData?.[key as keyof typeof auctionData] as number) ?? 0;
                 
@@ -242,9 +308,9 @@ const AuctionList = () => {
                         : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700/80 hover:border-gray-300 dark:hover:border-gray-600'
                     } ${count === 0 ? 'opacity-70' : ''}`}
                     onClick={() => {
-                      setActiveTab(label);
+                      _setActiveTab(label);
                       // Reset search query when changing tabs
-                      setSearchQuery('');
+                      _setSearchQuery('');
                     }}
                   >
                     <span>{label}</span>
@@ -259,36 +325,63 @@ const AuctionList = () => {
                 );
               })}
             </div>
-          </div>
-        </div>
-
-
-        {/* Search Bar */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="h-5 w-5 text-gray-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                  clipRule="evenodd"
-                />
-              </svg>
+            
+            {/* Search Bar */}
+            <div className="relative w-80">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  className="h-5 w-5 text-gray-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                placeholder="Search auctions..."
+                value={searchQuery}
+                onChange={(e) => _setSearchQuery(e.target.value)}
+              />
             </div>
-            <input
-              type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-              placeholder="Search auctions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
           </div>
         </div>
+
+        {/* Selected Rows Actions */}
+        {Object.keys(rowSelection).length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-between">
+            <div className="text-sm text-blue-700 dark:text-blue-300">
+              {Object.keys(rowSelection).length} item(s) selected
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={handleClearSelection}
+                className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:text-blue-300 dark:border-blue-700 dark:hover:bg-blue-800/50"
+              >
+                Clear Selection
+              </Button>
+              <Button 
+                size="sm" 
+                variant="primary"
+                onClick={handleExport}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export Selected
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* DataTable */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -297,12 +390,36 @@ const AuctionList = () => {
             data={auctionData?.data || []}
             totalItems={auctionData?.total || 0}
             isLoading={isLoading}
-            onPageChange={handlePageChange      }
-            onRowClick={handleRowClick}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
+            pageSize={pagination.pageSize}
+            currentPage={pagination.pageIndex + 1}
           />
         </div>
-      </div>
-    );
-  };
-  
-  export default AuctionList;
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setAuctionToDelete(null);
+        }}
+        title="Delete Auction"
+        confirmText={isDeleting ? 'Deleting...' : 'Delete'}
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setAuctionToDelete(null);
+        }}
+      >
+        <p className="text-gray-700 dark:text-gray-300">
+          Are you sure you want to delete the auction "{auctionToDelete?.name}"? This action cannot be undone.
+        </p>
+      </Modal>
+    </div>
+  );
+};
+
+export default AuctionList;
