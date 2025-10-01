@@ -6,9 +6,16 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import client from "../../services/axiosClient";
 
 
-export const useGetAuctionListApi = () => {
+interface AuctionListParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+}
+
+export const useGetAuctionListApi = (params?: AuctionListParams) => {
     return useQuery<AuctionListResponse>({
-      queryKey: ["MasterCount"],
+      queryKey: ["auctionList", params],
       queryFn: async (): Promise<AuctionListResponse> => {
         try {
           const token = getLocalItem(LOCAL_STORAGE_KEYS.TOKEN);       
@@ -19,6 +26,12 @@ export const useGetAuctionListApi = () => {
           const response = await client.get<AuctionListResponse>(
             ENDPOINTS.auction.list,
             {
+              params: {
+                page: params?.page,
+                pageSize: params?.pageSize,
+                search: params?.search,
+                status: params?.status,
+              },
               headers: {
                 Authorization: `Bearer ${token}`,
               },
