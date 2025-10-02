@@ -1,10 +1,17 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+  active?: boolean;
+}
 
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
+  breadcrumbs?: BreadcrumbItem[];
   showBackButton?: boolean;
   backButtonText?: string;
   backButtonUrl?: string;
@@ -15,6 +22,7 @@ interface PageHeaderProps {
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
+  breadcrumbs = [],
   showBackButton = false,
   backButtonText = '',
   backButtonUrl,
@@ -33,6 +41,43 @@ const PageHeader: React.FC<PageHeaderProps> = ({
 
   return (
     <div className={`mb-6 ${className}`}>
+      {/* Breadcrumbs */}
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <nav className="mb-4 flex" aria-label="Breadcrumb">
+          <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
+            {breadcrumbs.map((item: BreadcrumbItem, index: number) => (
+              <li key={index} className="inline-flex items-center">
+                {index > 0 && (
+                  <ChevronRight className="mx-1 h-4 w-4 text-gray-400" />
+                )}
+                {item.href ? (
+                  <Link
+                    to={item.href}
+                    className={`inline-flex items-center text-sm font-medium ${
+                      item.active
+                        ? 'text-gray-700 dark:text-gray-300'
+                        : 'text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span
+                    className={`text-sm font-medium ${
+                      item.active
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           {showBackButton && (

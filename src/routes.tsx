@@ -4,6 +4,10 @@ import App from './App';
 import { useAuth } from './hooks/API/useAuth';
 import MasterDashboard from './pages/Master/Dashboard';
 import AuctionList from './pages/Auction/AuctionList';
+import CreateAuction from './pages/Auction/CreateAuction';
+import AuctionDetail from './pages/Auction/AuctionDetail';
+import Profile from './pages/Profile';
+import AuctionLive from './pages/Auction/AuctionLive';
 // Lazy load components
 const LoginForm = lazy(() => import('./pages/Auth/Login'));
 const Table = lazy(() => import('./pages/Table'));
@@ -45,7 +49,6 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Suspense fallback={<div>Loading...</div>}>
-              <Table />
             </Suspense>
           </ProtectedRoute>
         ),
@@ -54,19 +57,55 @@ export const router = createBrowserRouter([
         path: 'auction',
         element: (
           <ProtectedRoute>
+            <AuctionList />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'auction/create',
+        element: (
+          <ProtectedRoute>
             <Suspense fallback={<div>Loading...</div>}>
-              <AuctionList />
+              <CreateAuction />
             </Suspense>
           </ProtectedRoute>
         ),
       },
       {
-        path: 'master',
+        path: 'auction/:id/edit',
         element: (
           <ProtectedRoute>
             <Suspense fallback={<div>Loading...</div>}>
-              <MasterDashboard />
+              <CreateAuction />
             </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'auction/:id/live',
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AuctionLive />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'auction/:id',
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AuctionDetail />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         ),
       },

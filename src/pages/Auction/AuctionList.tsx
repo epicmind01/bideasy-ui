@@ -1,13 +1,14 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, addDays, addHours, isAfter } from 'date-fns';
 import { type ColumnDef } from '@tanstack/react-table';
+import DateTimePicker from '../../components/ui/date-picker/DateTimePicker';
 import { Modal } from '../../components/ui/modal/Modal';
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
 import Badge from '../../components/ui/badge/Badge';
 import { DataTable } from '../../components/ui/data-table/DataTableFixed';
-import { useGetAuctionListApi, useDeleteAuctionApi } from '../../hooks/API/AuctionApi';
+import { useGetAuctionListApi, useDeleteAuctionApi, useCloneAuctionApi } from '../../hooks/API/AuctionApi';
 import type { AuctionData } from '../../Typings/AuctionTypes';
 
 const AuctionList = () => {
@@ -22,8 +23,22 @@ const AuctionList = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [auctionToDelete, setAuctionToDelete] = useState<AuctionData | null>(null);
   
-  // Delete mutation
+  // Clone modal state
+  const [cloneModalOpen, setCloneModalOpen] = useState(false);
+  const [auctionToClone, setAuctionToClone] = useState<AuctionData | null>(null);
+  const [cloneForm, setCloneForm] = useState<{
+    name: string;
+    startTime: Date | null;
+    endTime: Date | null;
+  }>({
+    name: '',
+    startTime: null,
+    endTime: null
+  });
+  
+  // API mutations
   const { mutate: deleteAuction, isPending: isDeleting } = useDeleteAuctionApi();
+  const { mutate: cloneAuction, isPending: isCloning } = useCloneAuctionApi();
   
   const { data: auctionData, isLoading, refetch } = useGetAuctionListApi({
     page: pagination.pageIndex + 1,
@@ -147,7 +162,7 @@ const AuctionList = () => {
                 </svg>
               </button>
               <button
-                onClick={() => console.log('Edit', row.original.id)}
+                onClick={() => navigate(`/auction/${row.original.id}/edit`)}
                 className="p-1.5 text-gray-500 hover:text-blue-500 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                 title="Edit"
               >
@@ -156,14 +171,13 @@ const AuctionList = () => {
                 </svg>
               </button>
               <button
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to clone this auction?')) {
-                    console.log('Clone', row.original.id);
-                    // Add your clone logic here
-                  }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCloneClick(row.original);
                 }}
-                className="p-1.5 text-gray-500 hover:text-green-500 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                className="p-1.5 text-gray-500 hover:text-green-500 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Clone"
+                disabled={isCloning}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -211,6 +225,44 @@ const AuctionList = () => {
     setRowSelection({});
   }, []);
 
+  // Handle clone click
+  const handleCloneClick = (auction: AuctionData) => {
+    const now = new Date();
+    const defaultEndTime = addDays(now, 7);
+    
+    setAuctionToClone(auction);
+    setCloneForm({
+      name: `${auction.name} (Copy)`,
+      startTime: now,
+      endTime: defaultEndTime
+    });
+    setCloneModalOpen(true);
+  };
+
+  // Handle clone form submit
+  const handleCloneSubmit = () => {
+    if (!auctionToClone) return;
+    
+    const payload = {
+      auctionId: auctionToClone.id,
+      name: cloneForm.name,
+      ...(cloneForm.startTime && { startTime: cloneForm.startTime.toISOString() }),
+      ...(cloneForm.endTime && { endTime: cloneForm.endTime.toISOString() })
+    };
+
+    cloneAuction(payload, {
+      onSuccess: () => {
+        setCloneModalOpen(false);
+        refetch();
+        // You might want to add a success toast here
+      },
+      onError: (error) => {
+        console.error('Failed to clone auction:', error);
+        // You might want to add an error toast here
+      }
+    });
+  };
+
   // Handle delete confirmation
   const handleDeleteClick = (auction: AuctionData) => {
     setAuctionToDelete(auction);
@@ -238,6 +290,57 @@ const AuctionList = () => {
       }
     });
   }, [auctionToDelete, deleteAuction, refetch]);
+
+  // Handle clone form input change
+  const handleCloneFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCloneForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle date change for DatePicker
+  const handleDateChange = (field: 'startTime' | 'endTime', date: Date | null) => {
+    if (date === null) {
+      setCloneForm(prev => ({ ...prev, [field]: null }));
+      return;
+    }
+    
+    setCloneForm(prev => {
+      const newForm = { ...prev, [field]: date };
+      
+      // If we're updating startTime and it's after the current endTime,
+      // update endTime to be 1 hour after the new startTime
+      if (field === 'startTime' && newForm.endTime && isAfter(date, newForm.endTime)) {
+        newForm.endTime = addHours(date, 1);
+      }
+      // If we're updating endTime and it's before the startTime,
+      // update it to be 1 hour after startTime
+      else if (field === 'endTime' && newForm.startTime && isAfter(newForm.startTime, date)) {
+        newForm.endTime = addHours(newForm.startTime, 1);
+      }
+      
+      return newForm;
+    });
+  };
+  
+  const isEndDateValid = useMemo(() => {
+    if (!cloneForm.startTime || !cloneForm.endTime) return true;
+    return isAfter(cloneForm.endTime, cloneForm.startTime);
+  }, [cloneForm.startTime, cloneForm.endTime]);
+
+  // Set default start time to now and end time to 1 hour from now when opening the modal
+  const handleOpenCloneModal = (auction: AuctionData) => {
+    const now = new Date();
+    setAuctionToClone(auction);
+    setCloneForm({
+      name: `${auction.name} (Copy)`,
+      startTime: now,
+      endTime: addHours(now, 1)
+    });
+    setCloneModalOpen(true);
+  };
 
   // Handle export of selected rows
   const handleExport = useCallback(() => {
@@ -417,6 +520,74 @@ const AuctionList = () => {
         <p className="text-gray-700 dark:text-gray-300">
           Are you sure you want to delete the auction "{auctionToDelete?.name}"? This action cannot be undone.
         </p>
+      </Modal>
+
+      {/* Clone Auction Modal */}
+      <Modal
+        isOpen={cloneModalOpen}
+        onClose={() => setCloneModalOpen(false)}
+        title="Clone Auction"
+        confirmText={isCloning ? 'Cloning...' : 'Clone'}
+        onConfirm={handleCloneSubmit}
+        onCancel={() => setCloneModalOpen(false)}
+      >
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="clone-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Auction Name
+            </label>
+            <input
+              type="text"
+              id="clone-name"
+              name="name"
+              value={cloneForm.name}
+              onChange={handleCloneFormChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              placeholder="Enter auction name"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Start Time (Optional)
+            </label>
+              <DateTimePicker
+                selected={cloneForm.startTime}
+                onChange={(date) => handleDateChange('startTime', date)}
+                placeholder="Select start time"
+                minDate={new Date()}
+                showTimeSelect
+                timeIntervals={15}
+                dateFormat="MMMM d, yyyy h:mm aa"
+                timeCaption="Start Time"
+              />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              End Time (Optional)
+            </label>
+              <div className="w-full">
+                <DateTimePicker
+                  selected={cloneForm.endTime}
+                  onChange={(date) => handleDateChange('endTime', date)}
+                  placeholder="Select end time"
+                  minDate={cloneForm.startTime || new Date()}
+                  showTimeSelect
+                  timeIntervals={15}
+                  dateFormat="MMMM d, yyyy h:mm aa"
+                  timeCaption="End Time"
+                  className={!isEndDateValid ? "border-red-500" : ""}
+                />
+                {!isEndDateValid && (
+                  <p className="mt-1 text-sm text-red-600">
+                    End time must be after start time
+                  </p>
+                )}
+              </div>
+          </div>
+        </div>
       </Modal>
     </div>
   );

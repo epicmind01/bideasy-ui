@@ -8,7 +8,7 @@ const ENDPOINTS = {
   inviteBulkDistributors: '/buyer/inviteBulkDistributors',
   getDistributorsList: '/vendor/distributors',
   vendorContractStatusUpdate: '/contracts/contract-status-update',
-
+  getBuyerProfile: '/buyer/getProfile',
   buyerSignIn: '/buyer/auth/login',
   // BUYER -----------------------------------------------------------
   rfqVendorsList: '/admin/vendor/users',
