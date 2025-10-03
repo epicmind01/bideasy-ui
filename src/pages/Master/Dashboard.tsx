@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Download, Search, AlertCircle } from 'lucide-react';
 
 // Components
-import InfoCard from './InfoCard';
 import ExcelUploadModal from './ExcelUploadModal';
 import { Input } from '../../components/ui/input';
 import Button from '../../components/ui/button/Button';
 import { Card } from '../../components/ui/card';
+import StatCard from '../../components/ui/stat-card/StatCard';
 
 // Hooks
 import { useGetMasterCountApi } from '../../hooks/API/useCommonApis';
@@ -15,17 +15,21 @@ import { useGetMasterCountApi } from '../../hooks/API/useCommonApis';
 // Types
 type MasterDataItem = {
   title: string;
+  description: string;
   count: number;
   path: string;
-  allowPermission: string[];
-  icon?: React.ReactNode;
+  allowPermission: string | string[];
+  icon: string;
+  color?: string;
+  iconColor?: string;
   accentColor?: string;
   iconBgColor?: string;
   subtitle?: string;
 };
 
 type MasterDataGroup = {
-  groupTitle: string;
+  title: string;
+  groupTitle?: string; // For backward compatibility
   items: MasterDataItem[];
 };
 
@@ -51,8 +55,10 @@ const Dashboard: React.FC = () => {
 
   const hasPermission = (item: MasterDataItem): boolean => {
     // Check if user has any of the required permissions
-    // Replace with your actual permission check logic
-    return item.allowPermission.length > 0;
+    if (Array.isArray(item.allowPermission)) {
+      return item.allowPermission.length > 0;
+    }
+    return !!item.allowPermission;
   };
 
   const fetchData = async (): Promise<void> => {
@@ -73,11 +79,15 @@ const Dashboard: React.FC = () => {
   const filteredGroups = React.useMemo(() => {
     if (!getCardsRecords?.data) return [];
     
+    const searchLower = searchTerm.toLowerCase();
+    
     return getCardsRecords.data.map(group => ({
       ...group,
-      items: group.items.filter(item =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
+      items: group.items.filter(item => {
+        const titleMatch = item.title.toLowerCase().includes(searchLower);
+        const descMatch = (item.description || item.subtitle || '').toLowerCase().includes(searchLower);
+        return titleMatch || descMatch;
+      }),
     })).filter(group => group.items.length > 0);
   }, [getCardsRecords?.data, searchTerm]);
 
@@ -221,44 +231,59 @@ const Dashboard: React.FC = () => {
       {isLoading || isRefreshing ? (
         renderSkeletons()
       ) : (
-        <div className="space-y-8">
-          {filteredGroups.map((group, index) => (
-            <section key={index} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">{group.groupTitle}</h2>
-                <span className="text-sm text-muted-foreground">
-                  {group.items.length} items
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {group.items.map((item, itemIndex) => (
-                  <div key={itemIndex}>
-                    <InfoCard
-                      title={item.title}
-                      count={item.count}
-                      onClick={() => hasPermission(item) && navigate(item.path)}
-                      allowPermission={hasPermission(item) ? 'true' : 'false'}
-                      icon={item.icon}
-                      accentColor={item.accentColor}
-                      iconBgColor={item.iconBgColor}
-                      subtitle={item.subtitle}
-                    />
+        <>
+          <div className="space-y-8">
+            {filteredGroups.map((group, index) => {
+              const groupTitle = group.title || group.groupTitle || 'Untitled Group';
+              const groupItems = group.items || [];
+              return (
+                <section key={index} className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">{groupTitle}</h2>
+                    <span className="text-sm text-muted-foreground">
+                      {groupItems.length} items
+                    </span>
                   </div>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {groupItems.map((item) => {
+                      const bgColor = item.color || item.accentColor || '#3b82f6';
+                      const description = item.description || item.subtitle || '';
+                      
+                      return (
+                        <div 
+                          key={item.path}
+                          className="cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => hasPermission(item) && navigate(item.path)}
+                        >
+                          <StatCard
+                            title={item.title}
+                            value={item.count}
+                            bgColor={bgColor}
+                          />
+                          {description && (
+                            <p className="mt-1 text-sm text-gray-500">
+                              {description}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
 
-      <ExcelUploadModal
-        isOpen={isExcelModalOpen}
-        onClose={handleCloseExcelModal}
-        onSuccess={() => {
-          void fetchData();
-          handleCloseExcelModal();
-        }}
-      />
+          <ExcelUploadModal
+            isOpen={isExcelModalOpen}
+            onClose={handleCloseExcelModal}
+            onSuccess={() => {
+              void fetchData();
+              handleCloseExcelModal();
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };

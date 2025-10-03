@@ -109,6 +109,16 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: 'master',
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<div>Loading...</div>}>
+              <MasterDashboard />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
   // 404 route

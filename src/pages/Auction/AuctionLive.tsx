@@ -1,8 +1,10 @@
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
 import BidGraph from '../../components/auction/BidGraph';
+import VendorComparisonTable from '../../components/auction/VendorComparisonTable';
+import AuctionSettings from '../../components/auction/AuctionSettings';
 import { 
   FileText, 
   Users, 
@@ -511,6 +513,16 @@ export default function AuctionDetail() {
           </div>
         )}
 
+        {activeTab === 'comparation' && (
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-4 text-lg font-medium">Vendor Bid Comparison</h3>
+            <VendorComparisonTable 
+              participants={auction.participants || []}
+              sheets={auction.itemsSheets || []}
+            />
+          </div>
+        )}
+
         {activeTab === 'terms' && (
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 text-lg font-medium">Terms & Conditions</h3>
@@ -533,60 +545,11 @@ export default function AuctionDetail() {
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Purchase Order</h3>
-              
             </div>
-            
           </div>
         )}
 
-        {activeTab === 'documents' && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h3 className="mb-4 text-lg font-medium">Auction Documents</h3>
-            {auction.eventDocuments && auction.eventDocuments.length > 0 ? (
-              <div className="overflow-hidden shadow ring-1 ring-black/5 sm:rounded-lg">
-                <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {auction.eventDocuments.map((doc) => (
-                    <li key={doc.id} className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 flex-shrink-0">
-                            <FileText className="h-10 w-10 text-gray-400" aria-hidden="true" />
-                          </div>
-                          <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              {doc.name}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {doc.size} • {doc.type}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="ml-4 flex-shrink-0">
-                          <a
-                            href={doc.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-                          >
-                            Download
-                          </a>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="rounded-md bg-gray-50 p-4 text-center dark:bg-gray-700">
-                <FileText className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No documents</h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  No documents have been uploaded for this auction.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+        {activeTab === 'settings' && <AuctionSettings auction={auction} />}
       </div>
     </div>
   );
