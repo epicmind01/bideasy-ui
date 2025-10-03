@@ -123,7 +123,7 @@ export const router = createBrowserRouter([
     element: <Navigate to="/" replace />,
   }  
 ],
-{
-  basename: '/buyer', // 👈 this is the important part
-}
+// {
+//   basename: '/buyer', // 👈 this is the important part
+// }
 );
