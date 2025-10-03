@@ -246,22 +246,24 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {groupItems.map((item) => {
+                      // Use the color from API response, fallback to accentColor or default blue
                       const bgColor = item.color || item.accentColor || '#3b82f6';
                       const description = item.description || item.subtitle || '';
                       
                       return (
                         <div 
                           key={item.path}
-                          className="cursor-pointer hover:opacity-90 transition-opacity"
+                          className="cursor-pointer hover:opacity-90 transition-opacity group"
                           onClick={() => hasPermission(item) && navigate(item.path)}
                         >
                           <StatCard
                             title={item.title}
                             value={item.count}
                             bgColor={bgColor}
+                            className="group-hover:shadow-lg transition-shadow duration-200"
                           />
                           {description && (
-                            <p className="mt-1 text-sm text-gray-500">
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                               {description}
                             </p>
                           )}

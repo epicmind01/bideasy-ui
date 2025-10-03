@@ -8,11 +8,11 @@ import { cn } from '../../lib/utils';
 
 // Define the steps for the stepper
 const steps = [
-  { id: 'auction-details', name: 'Auction Details' },
-  { id: 'product-info', name: 'Product Info' },
-  { id: 'pricing', name: 'Pricing' },
-  { id: 'images', name: 'Images' },
-  { id: 'review', name: 'Review' },
+  { id: 'auction-info', name: 'Auction Info' },
+  { id: 'auction-behavior', name: 'Auction Behavior' },
+  { id: 'item-info', name: 'Item Info' },
+  { id: 'participants', name: 'Participants' },
+  { id: 'schedule', name: 'Schedule' },
 ];
 
 const CreateAuction: React.FC = () => {
@@ -24,7 +24,7 @@ const CreateAuction: React.FC = () => {
     startDate: '',
     endDate: '',
     
-    // Step 2: Product Info
+    // Step 2: Auction Info
     productName: '',
     category: '',
     condition: 'new',
