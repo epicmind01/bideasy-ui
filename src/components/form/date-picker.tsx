@@ -1,59 +1,77 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import flatpickr from 'flatpickr';
+import type { Options } from 'flatpickr/dist/types/options';
+import type { Instance as FlatpickrInstance } from 'flatpickr/dist/types/instance';
 import 'flatpickr/dist/flatpickr.css';
 import Label from './Label';
-import { CalenderIcon } from '../../icons';
-import Hook = flatpickr.Options.Hook;
-import DateOption = flatpickr.Options.DateOption;
+import CalenderIcon from '../../icons/calender-line.svg?react';
+
+type Hook = (selectedDates: Date[], dateStr: string, instance: FlatpickrInstance) => void;
+type DateOption = Options['defaultDate'];
 
 type PropsType = {
   id: string;
   mode?: "single" | "multiple" | "range" | "time";
-  onChange?: Hook | Hook[];
+  onChange?: Hook;
   defaultDate?: DateOption;
   label?: string;
   placeholder?: string;
+  className?: string;
 };
 
 export default function DatePicker({
   id,
-  mode,
+  mode = "single",
   onChange,
   label,
   defaultDate,
   placeholder,
+  className = "",
 }: PropsType) {
+  const flatpickrRef = useRef<FlatpickrInstance | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    const flatPickr = flatpickr(`#${id}`, {
-      mode: mode || "single",
+    if (!inputRef.current) return;
+
+    const options: Options = {
+      mode,
       static: true,
       monthSelectorType: "static",
       dateFormat: "Y-m-d",
       defaultDate,
-      onChange,
-    });
+      onChange: onChange as Hook | undefined,
+      prevArrow:
+        '<svg class="fill-current" width="7" height="11" viewBox="0 0 7 11"><path d="M5.4 10.8l1.4-1.4-4-4 4-4L5.4 0 0 5.4z" /></svg>',
+      nextArrow:
+        '<svg class="fill-current" width="7" height="11" viewBox="0 0 7 11"><path d="M1.4 10.8L0 9.4l4-4-4-4L1.4 0l6 5.4z" /></svg>',
+    };
+
+    flatpickrRef.current = flatpickr(inputRef.current, options);
 
     return () => {
-      if (!Array.isArray(flatPickr)) {
-        flatPickr.destroy();
+      if (flatpickrRef.current) {
+        flatpickrRef.current.destroy();
+        flatpickrRef.current = null;
       }
     };
-  }, [mode, onChange, id, defaultDate]);
+  }, [id, mode, onChange, defaultDate]);
 
   return (
-    <div>
+    <div className={`w-full ${className}`}>
       {label && <Label htmlFor={id}>{label}</Label>}
-
       <div className="relative">
         <input
+          ref={inputRef}
           id={id}
+          className={`form-input w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm+ font-medium text-slate-700 placeholder-slate-400 transition-all duration-200 placeholder:text-sm hover:border-slate-400 focus:border-primary dark:border-navy-450 dark:bg-navy-700 dark:text-navy-100 dark:placeholder-navy-300 dark:hover:border-navy-400 dark:focus:border-accent ${className}`}
           placeholder={placeholder}
-          className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3  dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30  bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700  dark:focus:border-brand-800"
+          type="text"
+          data-class="flatpickr-right"
         />
-
-        <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-          <CalenderIcon className="size-6" />
-        </span>
+        <div className="pointer-events-none absolute right-0 top-0 flex h-full w-8 items-center justify-center text-slate-400 peer-focus:text-primary dark:text-navy-300 dark:peer-focus:text-accent">
+          <CalenderIcon className="h-6 w-6" />
+        </div>
       </div>
     </div>
   );

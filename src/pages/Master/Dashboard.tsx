@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, Search, AlertCircle } from 'lucide-react';
 
@@ -13,31 +13,25 @@ import StatCard from '../../components/ui/stat-card/StatCard';
 import { useGetMasterCountApi } from '../../hooks/API/useCommonApis';
 
 // Types
-type MasterDataItem = {
+interface MasterDataItem {
   title: string;
-  description: string;
   count: number;
   path: string;
-  allowPermission: string | string[];
-  icon: string;
+  icon: React.ReactNode;
+  description?: string;
   color?: string;
   iconColor?: string;
   accentColor?: string;
   iconBgColor?: string;
   subtitle?: string;
-};
+  allowPermission?: string[];
+}
 
-type MasterDataGroup = {
-  title: string;
-  groupTitle?: string; // For backward compatibility
+interface GroupItem {
+  title?: string;
+  groupTitle?: string;
   items: MasterDataItem[];
-};
-
-type ApiResponse<T = any> = {
-  data: T;
-  message?: string;
-  success?: boolean;
-};
+}
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -47,19 +41,12 @@ const Dashboard: React.FC = () => {
     isLoading,
     isError, 
     error 
-  } = useGetMasterCountApi<MasterDataGroup[]>();
+  } = useGetMasterCountApi();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const hasPermission = (item: MasterDataItem): boolean => {
-    // Check if user has any of the required permissions
-    if (Array.isArray(item.allowPermission)) {
-      return item.allowPermission.length > 0;
-    }
-    return !!item.allowPermission;
-  };
 
   const fetchData = async (): Promise<void> => {
     try {
@@ -76,20 +63,32 @@ const Dashboard: React.FC = () => {
     void fetchData();
   }, []);
 
-  const filteredGroups = React.useMemo(() => {
+  const filteredGroups = useMemo<GroupItem[]>(() => {
+    // Handle initial state and missing data
     if (!getCardsRecords?.data) return [];
     
+    const data = Array.isArray(getCardsRecords.data) ? getCardsRecords.data : [];
     const searchLower = searchTerm.toLowerCase();
     
-    return getCardsRecords.data.map(group => ({
-      ...group,
-      items: group.items.filter(item => {
-        const titleMatch = item.title.toLowerCase().includes(searchLower);
-        const descMatch = (item.description || item.subtitle || '').toLowerCase().includes(searchLower);
-        return titleMatch || descMatch;
-      }),
-    })).filter(group => group.items.length > 0);
-  }, [getCardsRecords?.data, searchTerm]);
+    return data
+      .filter((group) => {
+        if (!group) return false;
+        const hasTitle = typeof group.title === 'string' || typeof group.groupTitle === 'string';
+        return hasTitle && Array.isArray(group.items);
+      })
+      .map(group => ({
+        title: group.title,
+        groupTitle: group.groupTitle,
+        items: group.items.filter(item => {
+          if (!item || typeof item.title !== 'string') return false;
+          const titleMatch = item.title.toLowerCase().includes(searchLower);
+          const description = item.description ?? item.subtitle ?? '';
+          const descMatch = description.toLowerCase().includes(searchLower);
+          return titleMatch || descMatch;
+        })
+      }))
+      .filter(group => group.items.length > 0);
+  }, [getCardsRecords, searchTerm]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setSearchTerm(e.target.value);
@@ -227,7 +226,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
+      
       {isLoading || isRefreshing ? (
         renderSkeletons()
       ) : (
@@ -245,28 +244,30 @@ const Dashboard: React.FC = () => {
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {groupItems.map((item) => {
+                    {groupItems.map((item: MasterDataItem) => {
                       // Use the color from API response, fallback to accentColor or default blue
-                      const bgColor = item.color || item.accentColor || '#3b82f6';
-                      const description = item.description || item.subtitle || '';
+                      const bgColor = item.accentColor || item.color || '#3b82f6';
+                      const description = item.subtitle || item.description || '';
                       
                       return (
                         <div 
                           key={item.path}
-                          className="cursor-pointer hover:opacity-90 transition-opacity group"
-                          onClick={() => hasPermission(item) && navigate(item.path)}
+                          className="group"
                         >
                           <StatCard
                             title={item.title}
                             value={item.count}
+                            description={description}
                             bgColor={bgColor}
-                            className="group-hover:shadow-lg transition-shadow duration-200"
+                            showButton={true}
+                            buttonIcon={
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            }
+                            onButtonClick={() => navigate(item.path)}
+                            className="h-full group-hover:shadow-lg transition-shadow duration-200"
                           />
-                          {description && (
-                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                              {description}
-                            </p>
-                          )}
                         </div>
                       );
                     })}

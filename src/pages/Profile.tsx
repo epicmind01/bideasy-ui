@@ -6,16 +6,16 @@ import PageHeader from '../components/ui/page-header/PageHeader';
 import StatCard from '../components/ui/stat-card';
 import type { User } from '../Typings/LoginApiTypes';
 
-type UserProfile = Omit<User, 'password' | 'deletedAt' | 'BuyerRoleAssignment'> & {
+type UserProfile = Omit<User, 'password' | 'deletedAt'> & {
   buyerRoleAssignment: Array<{
     id: string;
     buyerId: string;
     roleId: string;
     createdAt: string;
-    role: Array<{
+    role: {
       id: string;
       title: string;
-    }>;
+    };
   }>;
   lastLogin?: string;
   head?: {
@@ -57,14 +57,14 @@ export default function Profile() {
   const { data, isLoading, error, refetch } = getUserProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({
+    id: '',
     email: '',
     employeeId: '',
     mobile: '',
     address: '',
     bio: '',
-    avatar: null,
-    headId: '',
-    createdById: null,
+    avatar: '',
+    createdById: '',
     name: '',
     companyName: '',
     userType: '',
@@ -73,7 +73,7 @@ export default function Profile() {
     updatedAt: '',
     lastLogin: '',
     head: { id: '', name: '' },
-    createdBy: null,
+    createdBy: { id: '', name: '' },
     buyerRoleAssignment: [],
     _count: {
       ARCApproval: 0,
@@ -99,14 +99,14 @@ export default function Profile() {
   useEffect(() => {
     if (data?.user) {
       const { password, deletedAt, ...userData } = data.user;
-      const updatedProfile = {
-        ...userData,
-        lastLogin: new Date().toISOString(),
-        buyerRoleAssignment: userData.BuyerRoleAssignment || []
-      };
+    const updatedProfile = {
+      ...userData,
+      lastLogin: new Date().toISOString(),
+      buyerRoleAssignment: userData.buyerRoleAssignment || []
+    };
       
-      setProfile(updatedProfile);
-      setFormData(updatedProfile);
+      setProfile(updatedProfile as UserProfile);
+      setFormData(updatedProfile as UserProfile);
     }
   }, [data]);
 
@@ -125,7 +125,7 @@ export default function Profile() {
         <Button
           key="retry"
           variant="primary"
-          onClick={refetch}
+          onClick={() => refetch()}
           className="mt-2"
         >
           Retry

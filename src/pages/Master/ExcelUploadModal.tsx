@@ -118,8 +118,6 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
         setShowResults(true);
         setExcelFile(null);
         onSuccess();
-      } else {
-        throw new Error(response.data?.message || 'Upload failed');
       }
     } catch (error: any) {
       console.error('Error uploading Excel file:', error);

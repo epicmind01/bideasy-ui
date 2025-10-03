@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ChevronLastIcon, Eye, EyeClosed } from "lucide-react";
 import { useAuth } from "../../hooks/API/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginForm() {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export default function LoginForm() {
     const password = formData.get('password') as string;
     try {
       await login(email, password);
-      window.location.href = "/dashboard";
+      navigate("/");
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

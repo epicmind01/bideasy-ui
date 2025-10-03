@@ -40,8 +40,10 @@ type ApiResponse<T> = {
 export interface MasterCountResponse {
   message: string;
   data: Array<{
+    title: string;
     groupTitle: string;
     items: Array<{
+      description: string | undefined;
       title: string;
       count: number;
       path: string;

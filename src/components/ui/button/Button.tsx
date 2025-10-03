@@ -1,17 +1,17 @@
 import type { ReactNode } from "react";
-import React from "react";
+import React, { forwardRef } from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
   size?: "sm" | "md";
   variant?: "primary" | "outline";
   startIcon?: ReactNode;
   endIcon?: ReactNode;
   className?: string;
   title?: string;
+  children?: ReactNode;
 }
 
-const Button: React.FC<ButtonProps> = ({
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   children,
   size = "md",
   variant = "primary",
@@ -19,8 +19,9 @@ const Button: React.FC<ButtonProps> = ({
   endIcon,
   className = "",
   title = "",
+  type = "button",
   ...props
-}) => {
+}, ref) => {
   // Base button classes
   let buttonClasses = `inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 ${className}`;
 
@@ -42,7 +43,8 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      type="button"
+      ref={ref}
+      type={type as "button" | "submit" | "reset" | undefined}
       className={buttonClasses}
       title={title}
       {...props}
@@ -52,6 +54,8 @@ const Button: React.FC<ButtonProps> = ({
       {endIcon && <span className="ml-2">{endIcon}</span>}
     </button>
   );
-};
+});
+
+Button.displayName = "Button";
 
 export default Button;

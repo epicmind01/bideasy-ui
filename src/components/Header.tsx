@@ -85,11 +85,11 @@ const Header: React.FC = () => {
 
           <Link to="/" className="lg:hidden">
             <picture>
-              <source srcSet="/images/logo/logo-dark.svg" media="(prefers-color-scheme: dark)" />
+              <source srcSet="https://bidezy.com/buyer/images/logo/logo-dark.svg" media="(prefers-color-scheme: dark)" />
               <img
                 width={154}
                 height={32}
-                src="/images/logo/logo.svg"
+                src="https://bidezy.com/buyer/images/logo/logo.svg"
                 alt="Logo"
                 loading="eager"
                 decoding="async"
@@ -162,7 +162,7 @@ const Header: React.FC = () => {
            
               <img
                 className="dark:hidden"
-                src="/images/logo/logo.svg"
+                src="https://bidezy.com/buyer/images/logo/logo.svg"
                 alt="Logo"
                 width={350}
                 height={50}

@@ -1,7 +1,5 @@
-"use client";
-import Image from "next/image";
-import Link from "next/link";
-import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import  { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 
@@ -86,10 +84,10 @@ export default function NotificationDropdown() {
               className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
             >
               <span className="relative block w-full h-10 rounded-full z-1 max-w-10">
-                <Image
+                <img
                   width={40}
                   height={40}
-                  src="/images/user/user-02.jpg"
+                  src="/imgs/user/user-02.jpg"
                   alt="User"
                   className="w-full overflow-hidden rounded-full"
                 />
@@ -122,10 +120,10 @@ export default function NotificationDropdown() {
               className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
             >
               <span className="relative block w-full h-10 rounded-full z-1 max-w-10">
-                <Image
+                <img
                   width={40}
                   height={40}
-                  src="/images/user/user-03.jpg"
+                  src="/imgs/user/user-03.jpg"
                   alt="User"
                   className="w-full overflow-hidden rounded-full"
                 />
@@ -159,10 +157,10 @@ export default function NotificationDropdown() {
               href="#"
             >
               <span className="relative block w-full h-10 rounded-full z-1 max-w-10">
-                <Image
+                <img
                   width={40}
                   height={40}
-                  src="/images/user/user-04.jpg"
+                  src="/imgs/user/user-04.jpg"
                   alt="User"
                   className="w-full overflow-hidden rounded-full"
                 />
@@ -196,10 +194,10 @@ export default function NotificationDropdown() {
               href="#"
             >
               <span className="relative block w-full h-10 rounded-full z-1 max-w-10">
-                <Image
+                <img
                   width={40}
                   height={40}
-                  src="/images/user/user-05.jpg"
+                  src="/imgs/user/user-05.jpg"
                   alt="User"
                   className="w-full overflow-hidden rounded-full"
                 />
@@ -232,10 +230,10 @@ export default function NotificationDropdown() {
               onItemClick={closeDropdown}
             >
               <span className="relative block w-full h-10 rounded-full z-1 max-w-10">
-                <Image
+                <img
                   width={40}
                   height={40}
-                  src="/images/user/user-02.jpg"
+                  src="/imgs/user/user-02.jpg"
                   alt="User"
                   className="w-full overflow-hidden rounded-full"
                 />
@@ -268,10 +266,10 @@ export default function NotificationDropdown() {
               className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
             >
               <span className="relative block w-full h-10 rounded-full z-1 max-w-10">
-                <Image
+                <img
                   width={40}
                   height={40}
-                  src="/images/user/user-03.jpg"
+                  src="/imgs/user/user-03.jpg"
                   alt="User"
                   className="w-full overflow-hidden rounded-full"
                 />
@@ -304,10 +302,10 @@ export default function NotificationDropdown() {
               className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
             >
               <span className="relative block w-full h-10 rounded-full z-1 max-w-10">
-                <Image
+                <img
                   width={40}
                   height={40}
-                  src="/images/user/user-04.jpg"
+                  src="/imgs/user/user-04.jpg"
                   alt="User"
                   className="w-full overflow-hidden rounded-full"
                 />
@@ -341,10 +339,10 @@ export default function NotificationDropdown() {
               href="#"
             >
               <span className="relative block w-full h-10 rounded-full z-1 max-w-10">
-                <Image
+                <img
                   width={40}
                   height={40}
-                  src="/images/user/user-05.jpg"
+                  src="/imgs/user/user-05.jpg"
                   alt="User"
                   className="overflow-hidden rounded-full"
                 />
@@ -373,7 +371,7 @@ export default function NotificationDropdown() {
           {/* Add more items as needed */}
         </ul>
         <Link
-          href="/"
+          to="/"
           className="block px-4 py-2 mt-3 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
         >
           View All Notifications

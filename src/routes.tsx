@@ -10,15 +10,11 @@ import Profile from './pages/Profile';
 import AuctionLive from './pages/Auction/AuctionLive';
 // Lazy load components
 const LoginForm = lazy(() => import('./pages/Auth/Login'));
-const Table = lazy(() => import('./pages/Table'));
-const Detail = lazy(() => import('./pages/Detail'));
 
 // Auth wrapper component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   const { isAuthenticated } = useAuth();
-
-  console.log("isAuthenticated", isAuthenticated());
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
@@ -125,5 +121,9 @@ export const router = createBrowserRouter([
   {
     path: '*',
     element: <Navigate to="/" replace />,
-  },
-]);
+  }  
+],
+{
+  basename: '/buyer', // 👈 this is the important part
+}
+);

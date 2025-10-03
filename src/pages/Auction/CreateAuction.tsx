@@ -251,12 +251,6 @@ const CreateAuction: React.FC = () => {
   };
 
 
-  const handleEditorChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      termsAndConditions: value
-    }));
-  };
 
   const handleSubmit = async () => {
     // Validate required fields

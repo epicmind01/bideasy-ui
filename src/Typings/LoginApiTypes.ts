@@ -7,6 +7,8 @@ export interface User {
     bio: string;
     avatar: string;
     name: string;
+    createdById: string;
+    password: string;
     companyName: string;
     userType: string;
     prAutoStatus: boolean;
@@ -47,7 +49,7 @@ export interface BuyerRoleAssignment {
     buyerId: string;
     roleId: string;
     createdAt: string;
-    role: Role[];
+    role: Role;
 }
 
 export interface Role {

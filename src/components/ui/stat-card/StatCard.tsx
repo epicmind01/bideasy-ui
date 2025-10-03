@@ -39,20 +39,32 @@ const AnimatedNumber = ({ value, duration = 1.5, className = '' }: AnimatedNumbe
 // StatCard component for displaying individual statistics with animation
 interface StatCardProps {
   title: string;
-  value: number;
+  value?: number | string;
+  description?: string;
   bgColor: string;
   duration?: number;
   delay?: number;
   className?: string;
+  buttonIcon?: React.ReactNode;
+  onButtonClick?: () => void;
+  showButton?: boolean;
 }
 
 const StatCard = ({ 
   title, 
-  value, 
+  value = 0, 
+  description,
   bgColor, 
   duration = 1.5, 
   delay = 0.1,
-  className = '' 
+  className = '',
+  buttonIcon = (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  ),
+  onButtonClick,
+  showButton = false
 }: StatCardProps) => {
   const controls = useAnimation();
   const ref = React.useRef(null);
@@ -67,7 +79,7 @@ const StatCard = ({
   return (
     <motion.div
       ref={ref}
-      className={`overflow-hidden rounded-lg p-4 ${bgColor} ${className}`}
+      className={`flex flex-col overflow-hidden rounded-lg p-5 h-full ${bgColor} ${className}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{
         opacity: isInView ? 1 : 0,
@@ -79,14 +91,40 @@ const StatCard = ({
         ease: "easeOut"
       }}
     >
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
-      <AnimatedNumber 
-        value={value} 
-        duration={duration} 
-        className="text-2xl font-semibold text-gray-900 dark:text-white"
-      />
+      <div className="flex-1">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1">
+            <div className="flex justify-between items-start">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+              {showButton && onButtonClick && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onButtonClick();
+                  }}
+                  className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full p-2.5 -m-1.5 w-10 h-10 border border-gray-200 dark:border-gray-600 transition-colors"
+                  aria-label="View details"
+                >
+                  {buttonIcon}
+                </button>
+              )}
+            </div>
+            <AnimatedNumber 
+              value={typeof value === 'number' ? value : 0} 
+              duration={duration} 
+              className="text-2xl font-semibold text-gray-900 dark:text-white"
+            />
+          </div>
+        </div>
+        
+        {description && (
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            {description}
+          </p>
+        )}
+      </div>
     </motion.div>
-  );
+  )
 };
 
 export default StatCard;

@@ -1,6 +1,4 @@
-// src/context/RegionContext.tsx
-'use client'
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 
 export interface Region {
   id: number
