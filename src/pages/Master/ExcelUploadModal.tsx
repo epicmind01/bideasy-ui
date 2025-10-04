@@ -3,7 +3,7 @@ import FileInput from '../../components/form/input/FileInput';
 import Button from '../../components/ui/button/Button';
 import { Modal } from '../../components/ui/modal';
 import client from '../../services/axiosClient';
-import { getLocalItem, LOCAL_STORAGE_KEYS } from '../../Utils/Helpers';
+import { getLocalItem, LOCAL_STORAGE_KEYS } from "../../utils/Helpers";
 import toast from 'react-hot-toast';
 import { Download, Upload, X } from 'lucide-react';
 

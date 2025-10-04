@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { axiosClient } from '../../services/axiosClient';
+import axiosClient from '../../services/axiosClient';
 import type { 
   PurchaseRequestData, 
   PurchaseRequestListParams, 

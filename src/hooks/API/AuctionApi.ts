@@ -1,7 +1,7 @@
 import ENDPOINTS from "../../services/ENDPOINTS";
 import type { AuctionListParams, AuctionListResponse, AuctionResponse, CloneAuctionPayload } from "../../Typings/AuctionTypes";
-import { getLocalItem } from "../../Utils/Helpers";
-import { LOCAL_STORAGE_KEYS } from "../../Utils/Helpers";
+import { getLocalItem } from "../../utils/Helpers";
+import { LOCAL_STORAGE_KEYS } from "../../utils/Helpers";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import client from "../../services/axiosClient";
 

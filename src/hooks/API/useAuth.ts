@@ -4,7 +4,7 @@ import client from "../../services/axiosClient";
 import type { User, LoginResponse, UserResponse } from "../../Typings/LoginApiTypes";
 import ENDPOINTS from "../../services/ENDPOINTS";
 import { useQuery } from "@tanstack/react-query";
-import { getLocalItem, LOCAL_STORAGE_KEYS } from "../../Utils/Helpers";
+import { getLocalItem, LOCAL_STORAGE_KEYS } from "../../utils/Helpers";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);

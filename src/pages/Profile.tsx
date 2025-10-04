@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getUserProfile } from '../hooks/API/useAuth';
-import { LOCAL_STORAGE_KEYS } from '../Utils/Helpers';
+import { LOCAL_STORAGE_KEYS } from '../utils/Helpers';
 import Button from '../components/ui/button/Button';
 import PageHeader from '../components/ui/page-header/PageHeader';
 import StatCard from '../components/ui/stat-card';

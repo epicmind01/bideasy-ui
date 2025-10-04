@@ -2,14 +2,13 @@
 import React, { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
-import { getLocalItem, resetLocalStorage } from "../../Utils/Helpers";
-import { LOCAL_STORAGE_KEYS } from "../../Utils/Helpers";
+import { getLocalItem, resetLocalStorage, LOCAL_STORAGE_KEYS } from "../../utils/Helpers";
 import { useNavigate } from "react-router-dom";
 
 export default function UserDropdown() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const user = getLocalItem(LOCAL_STORAGE_KEYS.USER);
+  const user = getLocalItem(LOCAL_STORAGE_KEYS.USER) as { name: string; email: string } | null;
 
 function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
   e.stopPropagation();

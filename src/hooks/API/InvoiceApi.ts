@@ -1,8 +1,8 @@
-import { useMutation, useQuery } from 'react-query';
-import { client } from '../../services/axiosClient';
-import { ENDPOINTS } from '../../services/ENDPOINTS';
-import { Invoice, InvoiceResponse, ApproveInvoicePayload } from '../../Typings/InvoiceTypes';
-import { getLocalItem } from '../../utils/LocalKeys';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import client from '../../services/axiosClient';
+import ENDPOINTS from '../../services/ENDPOINTS';
+import type { Invoice, InvoiceResponse, ApproveInvoicePayload } from '../../Typings/InvoiceTypes';
+import { getLocalItem } from '../../utils/Helpers';
 
 export const useGetAllInvoicesApi = (page?: number, limit?: number, searchObj?: Record<string, any>) => {
   const query = new URLSearchParams();
@@ -33,10 +33,8 @@ export const useGetAllInvoicesApi = (page?: number, limit?: number, searchObj?: 
           Authorization: `Bearer ${getLocalItem('TOKEN')}`,
         },
       }),
-    {
-      select: ({ data }: { data: InvoiceResponse }) => data?.data,
-      enabled: true,
-    }
+      select: ({ data }: { data: InvoiceResponse }) => data?,
+   
   );
 };
 
@@ -86,7 +84,15 @@ export const useInvoiceById = (invoiceId: string) => {
         },
       }),
     {
-      select: ({ data }: { data: { message: string; invoice: Invoice } }) => data?.invoice,
+    
+      select: ({ data }: { data: InvoiceResponse }) => ({
+        message: data?.message ?? '',
+        data: data?.data ?? [],
+        currentPage: data?.currentPage ?? 1,
+        pageSize: data?.pageSize ?? 10,
+        total: data?.total ?? 1,
+        totalPages: data?.totalPages ?? 1,
+      }),
       enabled: !!invoiceId,
     }
   );

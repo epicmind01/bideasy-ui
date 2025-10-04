@@ -1,5 +1,5 @@
 import React from "react";
-import { hasPermission } from "../../Utils/Helpers";
+import { hasPermission } from "../../utils/Helpers";
 
 interface InfoCardProps {
   title: string;

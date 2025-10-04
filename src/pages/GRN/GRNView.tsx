@@ -2,8 +2,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/Helpers";
 import { ReactTable } from "../../components/ui/table/ReactTable";
 import { useGetGrnByIdApi } from "../../hooks/API/GRNApi";
-import { FlexLoader } from "../../components/ui/loader/FlexLoader";
-import { Status } from "../../components/ui/status/Status";
+import FlexLoader from "../../components/ui/loader/FlexLoader";
+import Status from "../../components/ui/status/Status";
 import { FaArrowLeft } from 'react-icons/fa';
 
 const GRNView = () => {

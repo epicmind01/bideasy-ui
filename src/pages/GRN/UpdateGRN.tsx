@@ -1,19 +1,28 @@
 import { MdOutlineFileDownload } from "react-icons/md";
-import { PrimaryButton } from "../../components/ui/button/PrimaryButton";
-import { SecondaryButton } from "../../components/ui/button/SecondaryButton";
-import { TitleText } from "../../components/ui/title-text/TitleText";
-import { SubTitleText } from "../../components/ui/title-text/SubTitleText";
-import { CustomInput } from "../../components/form/CustomInput";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useGetGrnByIdApi, useUpdateGrnApi, GoodReceiptNote } from "../../hooks/API/GRNApi";
+import { useGetGrnByIdApi, useUpdateGrnApi, type GoodReceiptNote } from "../../hooks/API/GRNApi";
 import toast from "react-hot-toast";
 import { formatDate, hasPermission } from "../../utils/Helpers";
-import { ReactTable } from "../../components/ui/table/ReactTable";
-import { FlexLoader } from "../../components/ui/loader/FlexLoader";
-import { Paperclip } from "lucide-react";
-import { Download } from "lucide-react";
-import { CustomDatePicker } from "../../components/ui/date-picker/CustomDatePicker";
+import { Paperclip, Download } from "lucide-react";
+import { type ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '../../components/ui/data-table/DataTable';
+import PageHeader from '../../components/ui/page-header/PageHeader';
+import Badge from '../../components/ui/badge/Badge';
+import Button from '../../components/ui/button/Button';
+import CustomInput from "../../components/form/CustomInput";
+import CustomDatePicker from "../../components/ui/date-picker/CustomDatePicker";
+import FlexLoader from "../../components/ui/loader/FlexLoader";
+
+// Define GRN Item type locally
+interface GRNItem {
+  itemId: string;
+  quantity: number;
+  totalQuantity: number;
+  expiryDate?: string;
+  rejectedQuantity?: number;
+  reasonForRejection?: string;
+}
 
 const UpdateGRN = () => {
   const { id: grnId } = useParams<{ id: string }>();
@@ -23,9 +32,7 @@ const UpdateGRN = () => {
   const [grnAttachments, setGrnAttachments] = useState<File[]>([]);
   const [receivedByDate, setReceivedByDate] = useState<Date | null>(null);
   const [securityNumber, setSecurityNumber] = useState<string>("");
-  const [grnItems, setGrnItems] = useState<
-    { itemId: string; quantity: number; totalQuantity: number; expiryDate?: string; rejectedQuantity?: number; reasonForRejection?: string }[]
-  >([]);
+  const [grnItems, setGrnItems] = useState<GRNItem[]>([]);
 
   const { data: fetchedGrnData, isLoading, error } = useGetGrnByIdApi(grnId || '');
   const updateGrnApi = useUpdateGrnApi();
@@ -39,7 +46,7 @@ const UpdateGRN = () => {
     if (fetchedGrnData) {
       setGrnData(fetchedGrnData);
       setRemarks(fetchedGrnData.remarks || "");
-      setGrnStatus(fetchedGrnData.status);
+      _setGrnStatus(fetchedGrnData.status);
       setReceivedByDate(fetchedGrnData.receivedByDate ? new Date(fetchedGrnData.receivedByDate) : null);
       setSecurityNumber(fetchedGrnData.securityNumber || "");
       setGrnItems(
@@ -55,12 +62,6 @@ const UpdateGRN = () => {
     }
   }, [fetchedGrnData, error]);
 
-  const _handleDownload = (fileUrl: string, fileName: string) => {
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.download = fileName;
-    link.click();
-  };
 
   const handleGrnAttachmentChange = (files: FileList | null) => {
     if (files) {
@@ -136,12 +137,12 @@ const UpdateGRN = () => {
       formData.append("receivedByDate", new Date(receivedByDate).toISOString());
       formData.append("securityNumber", securityNumber);
   
-      grnAttachments.forEach((file, index) => {
+      grnAttachments.forEach((file) => {
         formData.append("asnAttachments", file, file.name);
       });
       setLoading(true);
   
-      const _updatedGrn = await updateGrnApi.mutateAsync(formData);
+      await updateGrnApi.mutateAsync(formData);
       toast.success(
         allItemsReceived
           ? "Goods Receipt Note and ASN marked as COMPLETED."
@@ -165,7 +166,7 @@ const UpdateGRN = () => {
   const handleCancel = () => {
     if (grnData) {
       setRemarks(grnData.remarks || "");
-      setGrnStatus(grnData.status);
+      _setGrnStatus(grnData.status);
       setGrnItems(
         grnData.GoodReceiptNoteItem.map((item) => ({
           itemId: item.itemId,
@@ -182,165 +183,208 @@ const UpdateGRN = () => {
   }
 
   if (!grnData) {
-    return <div className="p-6 text-center">GRN not found.</div>;
+    return (
+      <div className="p-6 text-center">
+        <div className="text-gray-500 dark:text-gray-400">GRN not found.</div>
+      </div>
+    );
   }
 
-  const grnItemColumns = [
+  // Define columns for DataTable
+  const columns: ColumnDef<GRNItem>[] = [
     {
-      name: "Item No",
-      selector: (row: { itemId: string }) => {
-        const item = grnData.GoodReceiptNoteItem.find((i) => i.itemId === row.itemId);
-        return item?.item?.itemCode || "";
+      accessorKey: 'itemId',
+      header: 'Item No',
+      cell: ({ row }) => {
+        const item = grnData.GoodReceiptNoteItem.find((i) => i.itemId === row.original.itemId);
+        return <div className="font-medium">{item?.item?.itemCode || ""}</div>;
       },
     },
     {
-      name: "Material Description",
-      selector: (row: { itemId: string }) => {
-        const item = grnData.GoodReceiptNoteItem.find((i) => i.itemId === row.itemId);
-        return item?.item?.MasterGeneric?.name || "";
+      accessorKey: 'itemId',
+      header: 'Material Description',
+      cell: ({ row }) => {
+        const item = grnData.GoodReceiptNoteItem.find((i) => i.itemId === row.original.itemId);
+        return <div className="text-gray-700 dark:text-gray-300">{item?.item?.MasterGeneric?.name || ""}</div>;
       },
     },
     {
-      name: "Total Quantity",
-      selector: (row: { itemId: string; totalQuantity: number }) => row.totalQuantity,
+      accessorKey: 'totalQuantity',
+      header: 'Total Quantity',
+      cell: ({ getValue }) => (
+        <div className="text-gray-700 dark:text-gray-300">{getValue() as number}</div>
+      ),
     },
     {
-      name: "Received Quantity",
-      cell: (row: { itemId: string; quantity: number }) => (
+      accessorKey: 'quantity',
+      header: 'Received Quantity',
+      cell: ({ row }) => (
         <input
           type="number"
-          value={row.quantity}
-          onChange={(e) => handleItemChange(row.itemId, "quantity", e.target.value)}
+          value={row.original.quantity}
+          onChange={(e) => handleItemChange(row.original.itemId, "quantity", e.target.value)}
           disabled={grnData.status !== "PENDING"}
-          className="border rounded p-1 w-20"
+          className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
         />
       ),
     },
     {
-      name: "Rejected Quantity",
-      cell: (row: { itemId: string; rejectedQuantity?: number }) => (
+      accessorKey: 'rejectedQuantity',
+      header: 'Rejected Quantity',
+      cell: ({ row }) => (
         <input
           type="number"
-          value={row.rejectedQuantity || 0}
-          onChange={(e) => handleItemChange(row.itemId, "rejectedQuantity", e.target.value)}
+          value={row.original.rejectedQuantity || 0}
+          onChange={(e) => handleItemChange(row.original.itemId, "rejectedQuantity", e.target.value)}
           disabled={grnData.status !== "PENDING"}
-          className="border rounded p-1 w-20"
+          className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
         />
       ),
     },
     {
-      name: "Rejection Remark",
-      cell: (row: { itemId: string; reasonForRejection?: string; rejectedQuantity?: number }) => (
+      accessorKey: 'reasonForRejection',
+      header: 'Rejection Remark',
+      cell: ({ row }) => (
         <input
           type="text"
-          value={row.reasonForRejection || ''}
-          onChange={(e) => handleItemChange(row.itemId, "reasonForRejection", e.target.value)}
-          disabled={grnData.status !== "PENDING" || (row.rejectedQuantity || 0) <= 0}
+          value={row.original.reasonForRejection || ''}
+          onChange={(e) => handleItemChange(row.original.itemId, "reasonForRejection", e.target.value)}
+          disabled={grnData.status !== "PENDING" || (row.original.rejectedQuantity || 0) <= 0}
           placeholder="Reason for rejection"
-          className="border rounded p-1 w-full"
+          className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
         />
       ),
     },
     {
-      name: "Expiry Date",
-      selector: (row: { itemId: string; expiryDate: string }) => row.expiryDate ? formatDate(row.expiryDate) : "",
+      accessorKey: 'expiryDate',
+      header: 'Expiry Date',
+      cell: ({ getValue }) => (
+        <div className="text-gray-700 dark:text-gray-300">
+          {getValue() ? formatDate(getValue() as string) : ""}
+        </div>
+      ),
     },
   ];
 
   return (
-    <div className="bg-gray-50 p-5 h-full max-h-full overflow-y-auto custom-scrollbar hide-scrollbar">
-      <div className="bg-white w-full mt-2">
-        <div className="flex flex-row justify-between p-6">
-          <TitleText children={"Update Goods Receipt Note"} />
-          {hasPermission("GRN View export") && (<SecondaryButton
-            title="Export"
-            leftIcon={<MdOutlineFileDownload size={16} />}
+    <div className="p-6">
+      <PageHeader
+        title="Update Goods Receipt Note"
+        subtitle="Update GRN details and manage item quantities"
+        showBackButton={true}
+      >
+        {hasPermission("GRN View export") && (
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {}}
-            variant="custom"
-            customVariant={{
-              borderColor: "none",
-              textColor: "text-black",
-              hoverColor: "",
-              bgColor: "bg-gray-100",
-            }}
-          />)}
+            className="flex items-center gap-2"
+          >
+            <MdOutlineFileDownload size={16} />
+            Export
+          </Button>
+        )}
+      </PageHeader>
+
+      <div className="space-y-6">
+
+        {/* GRN Information Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">GRN Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">GRN Number</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{grnData.grnNumber}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">ASN Number</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{grnData.asn?.asnNumber ?? 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Shipment Reference</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{grnData.asn?.shipmentReference ?? 'N/A'}</span>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">ASN Date</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {grnData.asn?.createdAt ? formatDate(grnData.asn?.createdAt) : "-"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Vendor</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{grnData.vendor.tempName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">PO Reference No</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {grnData.asn?.purchaseOrder?.purchaseOrderNumber || (grnData.Invoice && grnData.Invoice.length > 0) ? grnData.Invoice[0]?.po?.purchaseOrderNumber : 'N/A'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 bg-white p-4 rounded-md">
-        <div className="flex flex-col gap-2 p-4">
-        <div className="flex gap-2 justify-between">
-            <p className="text-md font-bold">GRN Number.</p>
-            <p className="text-md font-normal">{grnData.grnNumber}</p>
-          </div>
-          <div className="flex gap-2 justify-between">
-            <p className="text-md font-bold">ASN Number.</p>
-            <p className="text-md font-normal">{grnData.asn?.asnNumber ?? 'N/A'}</p>
-          </div>
-          <div className="flex gap-2 justify-between">
-            <p className="text-md font-bold">Shipment Reference.</p>
-            <p className="text-md font-normal">{grnData.asn?.shipmentReference ?? 'N/A'}</p>
-          </div>
-          </div>
-          <div className="flex flex-col gap-2 p-4">
-          <div className="flex gap-2 justify-between">
-            <p className="text-md font-bold">ASN Date.</p>
-            <p className="text-md font-normal">{grnData.asn?.createdAt ? formatDate(grnData.asn?.createdAt) : "-"}</p>
-          </div>
-          <div className="flex gap-2 justify-between">
-            <p className="text-md font-bold">Vendor.</p>
-            <p className="text-md font-normal">{grnData.vendor.tempName}</p>
-          </div>
-          <div className="flex gap-2 justify-between">
-            <p className="text-md font-bold">PO Reference No.</p>
-            <p className="text-md font-normal">{grnData.asn?.purchaseOrder?.purchaseOrderNumber || grnData.Invoice?.length > 0 ? grnData.Invoice[0]?.po?.purchaseOrderNumber : 'N/A'  }</p>
-          </div>
+        {/* GRN Items Table */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">GRN Items</h3>
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <DataTable
+              columns={columns}
+              data={grnItems}
+              totalItems={grnItems.length}
+              isLoading={false}
+              onPageChange={() => {}}
+              onPageSizeChange={() => {}}
+              rowSelection={{}}
+              onRowSelectionChange={() => {}}
+              pageSize={10}
+              currentPage={1}
+            />
           </div>
         </div>
 
-        <div className="m-3 bg-white">
-          <h3 className="text-lg font-medium mb-4">GRN Items</h3>
-          <ReactTable
-            data={grnItems}
-            columns={grnItemColumns}
-            loading={false}
-            rowsPerPageText={10}
-            isServerPropsDisabled={true}
-          />
-        </div>
-
-        <div className="p-4 bg-white">
-          <TitleText children={"GRN Attachments"} />
-          <div className="flex flex-col gap-2">
+        {/* GRN Attachments */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">GRN Attachments</h3>
+          <div className="space-y-3">
             {grnData.GRNAttachment.length > 0 ? (
               grnData.GRNAttachment.map((attachment, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                                              <Paperclip className="w-4 h-4 text-blue-600" />
-                                            </div>
-                                            <div>
-                                              <p className="text-sm font-medium text-gray-900">{attachment.fileName}</p>
-                                              <p className="text-xs text-gray-500">{attachment.fileType} </p>
-                                            </div>
-                                          </div>
-                                          <button 
-                                            className="text-blue-600 hover:text-blue-700 transition-colors"
-                                            onClick={() => handleDownloadAttachment(attachment)}
-                                          >
-                                            <Download className="w-4 h-4" />
-                                          </button>
-                                        </div>
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                      <Paperclip className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{attachment.fileName}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{attachment.fileType}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownloadAttachment(attachment)}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </Button>
+                </div>
               ))
             ) : (
-              <SubTitleText children={"No GRN attachments available."} />
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                No GRN attachments available.
+              </div>
             )}
           </div>
         </div>
 
-        <div className="p-4 bg-white">
-          <TitleText children={"GRN Details"} />
-
-          <div className="flex flex-row  gap-2">
+        {/* GRN Details Form */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">GRN Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CustomDatePicker
               label="Received By Date"
               value={receivedByDate ? new Date(receivedByDate) : null}
@@ -351,14 +395,14 @@ const UpdateGRN = () => {
             />
             <CustomInput
               label="Security Number"
-              value={securityNumber || '' }
+              value={securityNumber || ''}
               setValue={setSecurityNumber}
               placeholder="Enter the security number"
               disabled={grnData.status !== "PENDING"}
               additionalClasses="w-full"
             />
-          </div>  
-          <div className="flex flex-col gap-2">
+          </div>
+          <div className="mt-6 space-y-4">
             <CustomInput
               label="Remarks"
               value={remarks}
@@ -367,7 +411,6 @@ const UpdateGRN = () => {
               disabled={grnData.status !== "PENDING"}
               additionalClasses="w-full"
             />
-          
             <CustomInput
               value={grnAttachments}
               setValue={handleGrnAttachmentChange}
@@ -380,35 +423,49 @@ const UpdateGRN = () => {
           </div>
         </div>
 
-        <div className="p-4 bg-white">
-          <TitleText children={"Status Tracking"} />
-          <div className="flex flex-col gap-3">
-            <SubTitleText children={"GRN Status"} />
-            <span
-              className={`p-2 rounded-md w-[120px] text-center ${
-                grnData.status === "COMPLETED"
-                  ? "text-green-600 bg-green-100"
-                  : grnData.status === "REJECTED"
-                  ? "text-red-600 bg-red-100"
-                  : "text-yellow-600 bg-yellow-100"
-              }`}
+        {/* Status Tracking */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Status Tracking</h3>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">GRN Status</span>
+            <Badge
+              variant="light"
+              color={
+                grnData.status === "COMPLETED" ? "success" :
+                grnData.status === "REJECTED" ? "error" : "warning"
+              }
+              size="sm"
             >
               {grnData.status}
-            </span>
+            </Badge>
           </div>
         </div>
 
+        {/* Action Buttons */}
         {grnData.status === "PENDING" && (
-          <div className="flex flex-row gap-3 justify-end mt-4">
-            <SecondaryButton
-              title="Cancel"
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
               onClick={handleCancel}
-            />
-            <PrimaryButton
-              isLoading={loading}
-              title="Submit GRN"
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
               onClick={handleUpdateGrn}
-            />
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Updating...
+                </>
+              ) : (
+                'Submit GRN'
+              )}
+            </Button>
           </div>
         )}
       </div>

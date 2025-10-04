@@ -4,12 +4,12 @@ import { toast } from 'react-hot-toast';
 import { useGetPurchaseRequestByIdApi, useApproveOrRejectPurchaseRequestApi } from '../../hooks/API/PurchaseRequestApi';
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
-import { DataTable } from '../../components/ui/data-table/DataTable';
-import { formatDate } from '../../Utils/Helpers';
+import { DataTable } from '../../components/ui/data-table/DataTableFixed';
+import { formatDate } from "../../utils/Helpers";
 import Badge from '../../components/ui/badge/Badge';
 import { Modal } from '../../components/ui/modal/Modal';
-import { useGetActiveCategories } from '../../hooks/API/useCommonApis';
 import type { PurchaseRequestItem } from '../../Typings/PurchaseRequestTypes';
+import { useGetActiveAuctionCategories } from '../../hooks/API/useCommonApis';
 
 // Using the interfaces from types file
 
@@ -43,7 +43,7 @@ const PurchaseRequestView: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string }[]>([]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectedRowData, setSelectedRowData] = useState<PurchaseRequestItem[]>([]);
-  const { data: _productCategories } = useGetActiveCategories();
+  const { data: _productCategories } = useGetActiveAuctionCategories();
 
   // Fetch purchase order by ID
   const { data: purchaseOrder, isLoading, error } = useGetPurchaseRequestByIdApi(id || '');

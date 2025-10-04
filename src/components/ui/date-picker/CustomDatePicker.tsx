@@ -6,6 +6,9 @@ interface CustomDatePickerProps {
   onChange: (date: Date | null) => void;
   placeholder?: string;
   className?: string;
+  label?: string;
+  disabled?: boolean;
+  dateFormat?: string;
 }
 
 const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
@@ -13,6 +16,8 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   onChange,
   placeholder = 'Select date',
   className = '',
+  label,
+  disabled = false,
 }) => {
   const formatDate = (date: Date | null) => {
     if (!date) return '';
@@ -29,17 +34,25 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   };
 
   return (
-    <div className={`relative ${className}`}>
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Calendar className="h-4 w-4 text-gray-400" />
+    <div className={`space-y-1 ${className}`}>
+      {label && (
+        <label className="block text-sm font-medium text-gray-700">
+          {label}
+        </label>
+      )}
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Calendar className="h-4 w-4 text-gray-400" />
+        </div>
+        <input
+          type="date"
+          value={formatDate(value)}
+          onChange={handleDateChange}
+          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder={placeholder}
+          disabled={disabled}
+        />
       </div>
-      <input
-        type="date"
-        value={formatDate(value)}
-        onChange={handleDateChange}
-        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        placeholder={placeholder}
-      />
     </div>
   );
 };

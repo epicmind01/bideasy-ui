@@ -1,16 +1,17 @@
 import { MdOutlineFileDownload } from "react-icons/md";
-import { PrimaryButton } from "../../components/ui/button/PrimaryButton";
-import { SecondaryButton } from "../../components/ui/button/SecondaryButton";
-import { TitleText } from "../../components/ui/title-text/TitleText";
-import { SubTitleText } from "../../components/ui/title-text/SubTitleText";
-import { SVGIcon } from "../../components/SVGIcon";
+import PrimaryButton from "../../components/ui/button/PrimaryButton";
+import SecondaryButton from "../../components/ui/button/SecondaryButton";
+import TitleText from "../../components/ui/title-text/TitleText";
+import SubTitleText from "../../components/ui/title-text/SubTitleText";
+import SVGIcon from "../../components/SVGIcon";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { AdvanceSimpmentNoteItem, AsnAttachment, useCreateGrnApi, useGetAdvanceSimpmentNoteByIdApi } from "../../hooks/API/ASNApi";
+import type { AdvanceSimpmentNoteItem, AsnAttachment } from "../../Typings/ASNTypes";
+import { useCreateGrnApi, useGetAdvanceSimpmentNoteByIdApi } from "../../hooks/API/ASNApi";
 import toast from "react-hot-toast";
 import { formatDate, hasPermission } from "../../utils/Helpers";
 import { ReactTable } from "../../components/ui/table/ReactTable";
-import { FlexLoader } from "../../components/ui/loader/FlexLoader";
+import FlexLoader from "../../components/ui/loader/FlexLoader";
 
 const AsnView = () => {
   const { id } = useParams<{ id: string }>();

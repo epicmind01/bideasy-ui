@@ -1,4 +1,4 @@
-import { getLocalItem } from '../../Utils/Helpers';
+import { getLocalItem } from "../../utils/Helpers";
 import { LOCAL_STORAGE_KEYS } from '../../utils/LocalKeys';
 import client from '../../services/axiosClient';
 import { useMutation, useQuery } from '@tanstack/react-query';

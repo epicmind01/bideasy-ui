@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import ENDPOINTS from "../../services/ENDPOINTS";
-import { getLocalItem } from "../../Utils/Helpers";
-import { LOCAL_STORAGE_KEYS } from "../../Utils/Helpers";
+import { getLocalItem } from "../../utils/Helpers";
+import { LOCAL_STORAGE_KEYS } from "../../utils/Helpers";
 import client from "../../services/axiosClient";
 
 

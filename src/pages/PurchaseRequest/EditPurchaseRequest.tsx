@@ -6,7 +6,7 @@ import { DataTable } from '../../components/ui/data-table/DataTable';
 import { useGetActiveBusinessDepartment } from '../../hooks/API/useCommonApis';
 import { useGetAllPlantsList } from '../../hooks/API/usePlantMasterApis';
 import { useUpdatePurchaseRequestApi, useGetPurchaseRequestByIdApi } from '../../hooks/API/PurchaseRequestApi';
-import { formatDate } from '../../Utils/Helpers';
+import { formatDate } from "../../utils/Helpers";
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
 

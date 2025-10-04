@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import ENDPOINTS from "../../services/ENDPOINTS";
 import client from "../../services/axiosClient";
-import { getLocalItem } from "../../Utils/Helpers";
-import { LOCAL_STORAGE_KEYS } from "../../Utils/Helpers";
+import { getLocalItem } from "../../utils/Helpers";
+import { LOCAL_STORAGE_KEYS } from "../../utils/Helpers";
 
 // Type definitions for API responses
 interface CityResponse {
@@ -361,6 +361,33 @@ export const useGetBusinessDepartmentsForRFQApi = () => {
       onError: (error: unknown) => {
         console.error("Query Error in meta:", error);
       },
+    },
+  });
+};
+export const useGetActivePaymentTerms = () => {
+  return useQuery<ApiResponse<ApiResponseItem>, unknown>({
+    queryKey: ["paymentTerms"],
+    queryFn: async (): Promise<ApiResponse<ApiResponseItem>> => {
+      const response = await client.get<ApiResponse<ApiResponseItem>>(ENDPOINTS.Common.paymentTerms, {
+        headers: {
+          Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
+        },
+      });
+      return response.data;
+    },
+  });
+};  
+
+export const useGetAllActiveCompanyCodes = () => {
+  return useQuery<ApiResponse<ApiResponseItem>, unknown>({
+    queryKey: ["companyCodes"],
+    queryFn: async (): Promise<ApiResponse<ApiResponseItem>> => {
+      const response = await client.get<ApiResponse<ApiResponseItem>>(ENDPOINTS.Common.companyCodes, {
+        headers: {
+          Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
+        },
+      });
+      return response.data;
     },
   });
 };

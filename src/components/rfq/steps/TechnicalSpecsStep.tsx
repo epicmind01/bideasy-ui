@@ -2,9 +2,8 @@ import React from 'react';
 import { useRFQContext } from '../../../context/RFQContext';
 import Button from '../../ui/button/Button';
 import { Input } from '../../ui/input';
-import {
-  useGetActivePaymentTerms,
-} from '../../../hooks/API/useCommonApis';
+import { useGetActivePaymentTerms } from '../../../hooks/API/useCommonApis';
+
 
 const TechnicalSpecsStep: React.FC = () => {
   const {

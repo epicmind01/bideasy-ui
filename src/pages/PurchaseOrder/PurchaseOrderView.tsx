@@ -11,10 +11,10 @@ import {
   useUpdateAuctionPurchaseOrderApi 
 } from '../../hooks/API/PurchaseOrderApi';
 import type { PurchaseRequestItem } from '../../Typings/PurchaseOrderTypes';
-import { DataTable } from '../../components/ui/data-table/DataTable';
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
-import { formatDate } from '../../Utils/Helpers';
+import { formatDate } from "../../utils/Helpers";
+import { DataTable } from '../../components/ui/data-table/DataTable';
 
 const PurchaseOrderView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -292,7 +292,10 @@ const PurchaseOrderView: React.FC = () => {
             <DataTable
               data={poData.PurchaseOrderItem || []}
               columns={columns as any}
-              pagination={false as any}
+              onPageChange={() => {}}
+              onPageSizeChange={() => {}}
+              pageSize={10}
+              currentPage={1}
             />
           )}
         </div>

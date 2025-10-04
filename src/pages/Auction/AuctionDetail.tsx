@@ -13,7 +13,7 @@ import {
   UserIcon
 } from 'lucide-react';
 import { useGetAuctionByIdApi, useNotifyVendorToAuctionApi } from '../../hooks/API/AuctionApi';
-import { formatIndianCurrency,  calculateTimeLeft, formatTimeLeft, formatAuctionDate } from '../../Utils/Helpers';
+import { formatIndianCurrency,  calculateTimeLeft, formatTimeLeft, formatAuctionDate } from "../../utils/Helpers";
 
 // Countdown Timer Component
 const CountdownTimer = ({ endDate }: { endDate: string | Date }) => {

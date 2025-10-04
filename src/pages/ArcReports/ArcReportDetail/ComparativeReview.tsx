@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { DataTable } from '../../../components/ui/data-table/DataTable';
 import { type ColumnDef } from '@tanstack/react-table';
 import Badge from '../../../components/ui/badge/Badge';
+import type { ArcReportData } from '../../../Typings/ArcReportTypes';
+import { DataTable } from '../../../components/ui/data-table/DataTable';
 
 interface ComparativeReviewProps {
   arcRfqItems: any[];
@@ -248,7 +249,6 @@ const ComparativeReview: React.FC<ComparativeReviewProps> = ({
             <DataTable
               columns={columns}
               data={tableData}
-              loading={loading}
               onPageChange={() => {}}
               onPageSizeChange={() => {}}
               pageSize={10}
