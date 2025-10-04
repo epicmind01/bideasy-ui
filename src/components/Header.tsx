@@ -1,6 +1,5 @@
 "use client";
 import UserDropdown from "../components/header/UserDropdown";
-import RegionFilter from "../components/header/RegionFilter";
 import { useSidebar } from "../context/SidebarContext";
 import {Link} from "react-router-dom";
 import React, { useState ,useEffect,useRef} from "react";
@@ -117,39 +116,8 @@ const Header: React.FC = () => {
               />
             </svg>
           </button>
-          <div className="flex items-center gap-0 2xsm:gap-3 ">
-            {/* <!-- Dark Mode Toggler --> */}
-            {/* <ThemeToggleButton /> */}
-            <RegionFilter />
-            {/* <!-- Dark Mode Toggler --> */}
-
-           {/* <NotificationDropdown />  */}
-            {/* <!-- Notification Menu Area --> */}
-          </div >
          
-         <div className="hidden lg:block">
-  <div className="relative">
-    <span className="absolute -translate-y-1/2 left-4 top-1/2 pointer-events-none">
-      <svg
-        className="fill-gray-500 dark:fill-gray-400"
-        width="20"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M10 1.667A8.333 8.333 0 1010 18.333 8.333 8.333 0 0010 1.667zM0.833 10a9.167 9.167 0 1118.334 0A9.167 9.167 0 010.833 10zM10.417 5a0.417 0.417 0 10-0.834 0v5a0.417 0.417 0 00.241 0.38l3.333 1.667a0.417 0.417 0 10.373-0.747L10.417 9.54V5z"
-        />
-      </svg>
-    </span>
-    <div className="dark:bg-dark-900 h-11 w-auto xl:w-auto rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-4 text-sm text-gray-800 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 flex items-center">
-  
-    </div>
-  </div>
-</div>
+      
 
         </div>
          <div
@@ -157,20 +125,6 @@ const Header: React.FC = () => {
           "justify-start"
         }`}
       >
-        <Link to="/">
-          { (
-           
-              <img
-                className="dark:hidden"
-                src="https://bidezy.com/buyer/images/logo/logo.svg"
-                alt="Logo"
-                width={350}
-                height={50}
-                
-              />
-             
-          )}
-        </Link>
       </div>
         <div
           className={`${

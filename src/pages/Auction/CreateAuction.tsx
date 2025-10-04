@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
-// Removed unused import
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import Button from '../../components/ui/button/Button';
 import { Input } from '../../components/ui/input';
 import { Stepper } from '../../components/ui/stepper/Stepper';
@@ -9,6 +8,7 @@ import Select from '../../components/form/Select';
 import MultiSelect from '../../components/form/MultiSelect';
 import FileInput from '../../components/form/input/FileInput';
 import { Editor } from '../../components/editor/Editor';
+import PageHeader from '../../components/ui/page-header/PageHeader';
 import { 
   useGetActiveAuctionCategories, 
   useGetAllActivePlants,
@@ -27,33 +27,61 @@ const steps = [
 // Types for form data
 type FormData = {
   // Step 1: Auction Info
-  auctionName: string;
+  name: string;
+  status: string;
+  eventCode: string;
   eventCategory: string;
   businessDepartment: string;
   coCreators: string[];
-  plantName: string;
+  observers: string[];
   termsAndConditions: string;
+  plantId: string;
   eventDocuments: File[];
   vendorDocuments: File[];
-  observers: string[];
-  
-  // Step 2: Auction Behavior
-  startDate: string;
-  endDate: string;
-  
-  // Step 3: Item Info
-  productName: string;
-  category: string;
-  condition: string;
-  specifications: string;
-  
-  // Step 4: Pricing
-  startPrice: string;
-  reservePrice: string;
-  buyNowPrice: string;
-  
-  // Step 5: Images
   images: File[];
+
+  // Step 2: Auction Behavior
+  auctionBehavior: string,  // 1.Project Auction  2.English Auction  3.Dutch Auction  4.Bidding  5.Indicative Auction checkbox
+  predefinedTemplate: boolean, // 1. YES  2. NO 
+  templateId: string,  // comes from api if predefinedTemplate is true then show
+  displayleadingprice: boolean, //Yes/No
+  HasFirstQuote: boolean, // Yes/No
+  leadingPrice: number, // if HasFirstQuote is true then show
+  canBidAgainst: string, // 1. Leading Price  2. Vendor Self Price checkbox
+  mcdPrice: number,
+  minimumBDPrice: number, // Yes/No
+  hasMaxBidDiff: boolean, // Yes/No
+  maxBidDiffPrice: number, // if hasMaxBidDiff is true then show
+  minBidDifferenceContractors: number,
+  minBidDifferenceSelf: number,
+  canMatchLeadingVendorsPrice: boolean,
+  hasReservedBuyingOrSelling: string, // 1. INDICATIVE  2. STOP_FURTHER_BIDDING  3.NOT_APPLICABLE checkbox
+  reserveBuyingSellingPrice: number, // if hasReservedBuyingOrSelling is STOP_FURTHER_BIDDING or INDICATIVE then show
+  canDisplayParticipationRank: string, // 1. SHOW_TO_ALL  2. SHOW_ONLY_TO_LEADING_VENDORS  3.NOT_REQUIRED checkbox
+  isSingleBid: boolean, //Yes/No
+  isVendorCompanyNameMasked: boolean, //Yes/No
+  isVendorBidPriceMasked: boolean, //Yes/No  
+  winnerAnnounced: string, // 1. MANUAL  2. AUTOMATIC    checkbox
+  
+
+  // Step 3: Auction Items
+  itemSheets: [],
+  itemsSheet: [],
+  itemType: string,
+
+  // Step 4: Vendor Selection
+  allSelected: boolean,
+  selectedRows: [],
+
+  // Step 5: Auction Schedule
+  extension: number,
+  startTime: string,
+  endTime: string,
+  isAutoExtension: boolean,
+  lastBidExtension: number,
+  overallExtension: number,
+  scheduleBehaviour: string,
+
 };
 
 // Type for select options
@@ -73,31 +101,71 @@ type MultiSelectOption = {
 
 const CreateAuction: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
+  
+  // Define breadcrumbs for the page header
+  const breadcrumbs = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Auctions', href: '/auction' },
+    { label: 'Create Auction', active: true }
+  ];
+
   const [formData, setFormData] = useState<FormData>({
-    // Step 1
-    auctionName: '',
+    // Step 1: Auction Info
+    name: '',
+    status: '',
+    eventCode: '',
     eventCategory: '',
     businessDepartment: '',
     coCreators: [],
-    plantName: '',
+    observers: [],
     termsAndConditions: '',
+    plantId: '',
     eventDocuments: [],
     vendorDocuments: [],
-    observers: [],
-    // Step 2
-    startDate: '',
-    endDate: '',
-    // Step 3
-    productName: '',
-    category: '',
-    condition: '',
-    specifications: '',
-    // Step 4
-    startPrice: '',
-    reservePrice: '',
-    buyNowPrice: '',
-    // Step 5
-    images: []
+    images: [],
+
+    // Step 2: Auction Behavior
+    auctionBehavior: '',
+    predefinedTemplate: false,
+    templateId: '',
+    displayleadingprice: false,
+    HasFirstQuote: false,
+    canBidAgainst: '',
+    mcdPrice: 0,
+    minimumBDPrice: 0,
+    hasMaxBidDiff: false,
+    minBidDifferenceContractors: 0,
+    minBidDifferenceSelf: 0,
+    maxBidDiffPrice: 0,
+    canMatchLeadingVendorsPrice: false,
+    hasReservedBuyingOrSelling: '',
+    canDisplayParticipationRank: '',
+    reserveBuyingSellingPrice: 0,
+    isSingleBid: false,
+    isVendorCompanyNameMasked: false,
+    isVendorBidPriceMasked: false,
+    leadingPrice: 0,
+    winnerAnnounced: '',
+
+    // Step 3: Auction Items
+    itemSheets: [],
+    itemsSheet: [],
+    itemType: '',
+    // Step 4: Vendor Selection
+    allSelected: false,
+    selectedRows: [],
+    
+
+
+    // Step 5: Auction Schedule
+    extension: 0,
+    startTime: '',
+    endTime: '',
+    isAutoExtension: false,
+    lastBidExtension: 0,
+    overallExtension: 0,
+    scheduleBehaviour: '',
+
   });
 
   // Define types for API responses
@@ -229,15 +297,43 @@ const CreateAuction: React.FC = () => {
 
   const handleFileUpload = (
     files: FileList | null, 
-    field: 'eventDocuments' | 'vendorDocuments' | 'images'
   ) => {
-    if (files) {
-      const fileList = Array.from(files);
-      setFormData(prev => ({
-        ...prev,
-        [field]: [...(prev[field] || []), ...fileList]
-      }));
+    if (!files) return;
+
+    const validFileTypes = [
+      // Images
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      // PDF
+      'application/pdf',
+      // Word
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      // Excel
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+
+    const invalidFiles: string[] = [];
+    const validFiles: File[] = [];
+
+    // Check each file's type
+    Array.from(files).forEach(file => {
+      if (validFileTypes.includes(file.type)) {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    });
+
+    // Show error for invalid files
+    if (invalidFiles.length > 0) {
+      alert(`The following files have an unsupported format and were not added:\n${invalidFiles.join('\n')}\n\nPlease upload only images (JPEG, PNG, GIF), PDF, Word, or Excel files.`);
     }
+
+    
   };
 
   const handleRemoveFile = (
@@ -246,7 +342,7 @@ const CreateAuction: React.FC = () => {
   ) => {
     setFormData(prev => ({
       ...prev,
-      [field]: (prev[field] || []).filter((_, i) => i !== index)
+      [field]: (prev[field] as File[]).filter((_, i) => i !== index)
     }));
   };
 
@@ -255,7 +351,7 @@ const CreateAuction: React.FC = () => {
   const handleSubmit = async () => {
     // Validate required fields
     const requiredFields: (keyof FormData)[] = [
-      'auctionName',
+      'name',
       'eventCategory',
       'businessDepartment',
       'termsAndConditions'
@@ -320,8 +416,8 @@ const CreateAuction: React.FC = () => {
               </label>
               <Input
                 type="text"
-                name="auctionName"
-                value={formData.auctionName}
+                name="name"
+                value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Enter auction name"
                 required
@@ -388,9 +484,9 @@ const CreateAuction: React.FC = () => {
                   { value: '', label: 'Select an option' },
                   ...plantOptions
                 ]}
-                defaultValue={formData.plantName}
+                defaultValue={formData.plantId}
                 onChange={(value: string) => 
-                  setFormData(prev => ({ ...prev, plantName: value }))
+                  setFormData(prev => ({ ...prev, plantId: value }))
                 }
                 placeholder="Select plant"
               />
@@ -423,7 +519,7 @@ const CreateAuction: React.FC = () => {
               <div className="file-input-wrapper">
                 <FileInput
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                    handleFileUpload(e.target.files, 'eventDocuments')
+                    handleFileUpload(e.target.files)
                   }
                   accept=".pdf,.doc,.docx,.xls,.xlsx"
                   multiple
@@ -455,7 +551,7 @@ const CreateAuction: React.FC = () => {
               <div className="file-input-wrapper">
                 <FileInput
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                    handleFileUpload(e.target.files, 'vendorDocuments')
+                    handleFileUpload(e.target.files)
                   }
                   accept=".pdf,.doc,.docx,.xls,.xlsx"
                   multiple
@@ -495,62 +591,571 @@ const CreateAuction: React.FC = () => {
       
       case 1: // Auction Behavior
         return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-              <Input
-                type="text"
-                name="productName"
-                value={formData.productName}
-                onChange={handleInputChange}
-                placeholder="Enter product name"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded-md"
-                  required
-                >
-                  <option value="">Select a category</option>
-                  <option value="electronics">Electronics</option>
-                  <option value="fashion">Fashion</option>
-                  <option value="home">Home & Garden</option>
-                  <option value="vehicles">Vehicles</option>
-                  <option value="collectibles">Collectibles</option>
-                </select>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column */}
+              <div className="space-y-6">
+                {/* Auction Type */}
+                <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6 pb-2 border-b border-gray-100 dark:border-gray-700">Auction Type</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                        Use Predefined Template
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.predefinedTemplate}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            predefinedTemplate: e.target.checked
+                          }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    {formData.predefinedTemplate && (
+                      <div className="mb-4">
+                        <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Select Template
+                        </label>
+                        <select
+                          className="w-full p-2.5 border rounded-md text-base"
+                          value={formData.templateId}
+                          onChange={(e) => {
+                            const selectedTemplate = e.target.value;
+                            // Here you would typically fetch the template data and update the form
+                            // For now, we'll just update the templateId
+                            setFormData(prev => ({
+                              ...prev,
+                              templateId: selectedTemplate,
+                              // Add more fields here to be populated from the template
+                              // For example: auctionBehavior: templateData.auctionBehavior
+                            }));
+                          }}
+                        >
+                          <option value="">Select Template</option>
+                          <option value="template1">Template 1 - Standard Auction</option>
+                          <option value="template2">Template 2 - Quick Bidding</option>
+                          <option value="template3">Template 3 - Sealed Bid</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Auction Behavior <span className="text-red-500">*</span>
+                      </label>
+                      <div className="space-y-3 pl-1">
+                        {[
+                          { value: 'PROJECT_AUCTION', label: 'Project Auction' },
+                          { value: 'ENGLISH_AUCTION', label: 'English Auction' },
+                          { value: 'DUTCH_AUCTION', label: 'Dutch Auction' },
+                          { value: 'BIDDING', label: 'Bidding' },
+                          { value: 'INDICATIVE_AUCTION', label: 'Indicative Auction' }
+                        ].map((option) => (
+                          <label key={option.value} className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <input
+                              type="radio"
+                              name="auctionBehavior"
+                              className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                              checked={formData.auctionBehavior === option.value}
+                              onChange={() => setFormData(prev => ({
+                                ...prev,
+                                auctionBehavior: option.value
+                              }))}
+                            />
+                            <span className="ml-3 text-base text-gray-700 dark:text-gray-300">
+                              {option.label}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                      {!formData.auctionBehavior && (
+                        <div className="mt-2 flex items-center text-sm text-red-600">
+                          <svg className="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          Please select an auction behavior
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                        Use Predefined Template
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.predefinedTemplate}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            predefinedTemplate: e.target.checked
+                          }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    {formData.predefinedTemplate && (
+                      <div>
+                        <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Select Template
+                        </label>
+                        <select
+                          className="w-full p-2.5 border rounded-md text-base"
+                          value={formData.templateId}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            templateId: e.target.value
+                          }))}
+                        >
+                          <option value="">Select Template</option>
+                          {/* Template options would be populated from an API */}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bidding Settings */}
+                <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6 pb-2 border-b border-gray-100 dark:border-gray-700">Bidding Settings</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                        Display Leading Price
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.displayleadingprice}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            displayleadingprice: e.target.checked
+                          }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                        Has First Quote
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.HasFirstQuote}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            HasFirstQuote: e.target.checked
+                          }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    {formData.HasFirstQuote && (
+                      <div>
+                        <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Leading Price
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full p-2.5 border rounded-md text-base"
+                          value={formData.leadingPrice}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            leadingPrice: parseFloat(e.target.value) || 0
+                          }))}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Can Bid Against
+                      </label>
+                      <div className="space-y-3 pl-1">
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.canBidAgainst === 'LEADING_PRICE'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              canBidAgainst: 'LEADING_PRICE'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Leading Price</span>
+                        </label>
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.canBidAgainst === 'VENDOR_SELF_PRICE'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              canBidAgainst: 'VENDOR_SELF_PRICE'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Vendor Self Price</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          MCD Price
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full p-2.5 border rounded-md text-base"
+                          value={formData.mcdPrice}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            mcdPrice: parseFloat(e.target.value) || 0
+                          }))}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Min BD Price
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full p-2.5 border rounded-md text-base"
+                          value={formData.minimumBDPrice}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            minimumBDPrice: parseFloat(e.target.value) || 0
+                          }))}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Condition</label>
-                <select
-                  name="condition"
-                  value={formData.condition}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded-md"
-                  required
-                >
-                  <option value="new">New</option>
-                  <option value="used">Used - Like New</option>
-                  <option value="good">Used - Good</option>
-                  <option value="fair">Used - Fair</option>
-                </select>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                {/* Bid Difference */}
+                <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6 pb-2 border-b border-gray-100 dark:border-gray-700">Bid Difference</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                        Has Max Bid Difference
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.hasMaxBidDiff}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            hasMaxBidDiff: e.target.checked
+                          }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    {formData.hasMaxBidDiff && (
+                      <div>
+                        <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Max Bid Diff Price
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full p-2.5 border rounded-md text-base"
+                          value={formData.maxBidDiffPrice}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            maxBidDiffPrice: parseFloat(e.target.value) || 0
+                          }))}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Min Diff (Contractors)
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full p-2.5 border rounded-md text-base"
+                          value={formData.minBidDifferenceContractors}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            minBidDifferenceContractors: parseFloat(e.target.value) || 0
+                          }))}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Min Diff (Self)
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full p-2.5 border rounded-md text-base"
+                          value={formData.minBidDifferenceSelf}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            minBidDifferenceSelf: parseFloat(e.target.value) || 0
+                          }))}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                        Can Match Leading Vendor's Price
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.canMatchLeadingVendorsPrice}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            canMatchLeadingVendorsPrice: e.target.checked
+                          }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reserved Buying/Selling */}
+                <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6 pb-2 border-b border-gray-100 dark:border-gray-700">Reserved Buying/Selling</h3>
+                  <div className="space-y-5">
+                    <div className="space-y-3">
+                      <label className="block text-base font-medium text-gray-700 dark:text-gray-300">
+                        Has Reserved Buying/Selling
+                      </label>
+                      <div className="space-y-3 pl-1">
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.hasReservedBuyingOrSelling === 'INDICATIVE'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              hasReservedBuyingOrSelling: 'INDICATIVE'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Indicative</span>
+                        </label>
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.hasReservedBuyingOrSelling === 'STOP_FURTHER_BIDDING'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              hasReservedBuyingOrSelling: 'STOP_FURTHER_BIDDING'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Stop Further Bidding</span>
+                        </label>
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.hasReservedBuyingOrSelling === 'NOT_APPLICABLE'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              hasReservedBuyingOrSelling: 'NOT_APPLICABLE'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Not Applicable</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {(formData.hasReservedBuyingOrSelling === 'INDICATIVE' || 
+                      formData.hasReservedBuyingOrSelling === 'STOP_FURTHER_BIDDING') && (
+                      <div>
+                        <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Reserve Buying/Selling Price
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full p-2.5 border rounded-md text-base"
+                          value={formData.reserveBuyingSellingPrice}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            reserveBuyingSellingPrice: parseFloat(e.target.value) || 0
+                          }))}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Display Settings */}
+                <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6 pb-2 border-b border-gray-100 dark:border-gray-700">Display Settings</h3>
+                  <div className="space-y-5">
+                    <div className="space-y-3">
+                      <label className="block text-base font-medium text-gray-700 dark:text-gray-300">
+                        Display Participation Rank
+                      </label>
+                      <div className="space-y-3 pl-1">
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.canDisplayParticipationRank === 'SHOW_TO_ALL'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              canDisplayParticipationRank: 'SHOW_TO_ALL'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Show to All</span>
+                        </label>
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.canDisplayParticipationRank === 'SHOW_ONLY_TO_LEADING_VENDORS'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              canDisplayParticipationRank: 'SHOW_ONLY_TO_LEADING_VENDORS'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Show Only to Leading Vendors</span>
+                        </label>
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.canDisplayParticipationRank === 'NOT_REQUIRED'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              canDisplayParticipationRank: 'NOT_REQUIRED'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Not Required</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                        Single Bid Only
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.isSingleBid}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            isSingleBid: e.target.checked
+                          }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                        Mask Vendor Company Name
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.isVendorCompanyNameMasked}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            isVendorCompanyNameMasked: e.target.checked
+                          }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-base font-medium text-gray-700 dark:text-gray-300">
+                        Mask Vendor Bid Price
+                      </label>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={formData.isVendorBidPriceMasked}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            isVendorBidPriceMasked: e.target.checked
+                          }))}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Winner Announced
+                      </label>
+                      <div className="space-y-3 pl-1">
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.winnerAnnounced === 'MANUAL'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              winnerAnnounced: 'MANUAL'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Manual</span>
+                        </label>
+                        <label className="flex items-center py-1.5">
+                          <input
+                            type="radio"
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-400"
+                            checked={formData.winnerAnnounced === 'AUTOMATIC'}
+                            onChange={() => setFormData(prev => ({
+                              ...prev,
+                              winnerAnnounced: 'AUTOMATIC'
+                            }))}
+                          />
+                          <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">Automatic</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Specifications</label>
-              <textarea
-                name="specifications"
-                value={formData.specifications}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded-md"
-                rows={4}
-                placeholder="Enter product specifications (e.g., size, color, model, etc.)"
-              />
             </div>
           </div>
         );
@@ -558,216 +1163,21 @@ const CreateAuction: React.FC = () => {
       case 2: // Pricing
         return (
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Starting Price ($)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <Input
-                  type="number"
-                  name="startPrice"
-                  value={formData.startPrice}
-                  onChange={handleInputChange}
-                  placeholder="0.00"
-                  min="0"
-                  step="0.01"
-                  className="pl-7"
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Reserve Price ($)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <Input
-                  type="number"
-                  name="reservePrice"
-                  value={formData.reservePrice}
-                  onChange={handleInputChange}
-                  placeholder="0.00"
-                  min="0"
-                  step="0.01"
-                  className="pl-7"
-                />
-                <p className="mt-1 text-xs text-gray-500">Minimum price you're willing to accept (optional)</p>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Buy Now Price ($)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <Input
-                  type="number"
-                  name="buyNowPrice"
-                  value={formData.buyNowPrice}
-                  onChange={handleInputChange}
-                  placeholder="0.00"
-                  min="0"
-                  step="0.01"
-                  className="pl-7"
-                />
-                <p className="mt-1 text-xs text-gray-500">Allow buyers to purchase immediately at this price (optional)</p>
-              </div>
-            </div>
+           
           </div>
         );
       
       case 3: // Images
         return (
           <div className="space-y-4">
-            <div className="flex items-center justify-center w-full">
-              <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                  <p className="text-xs text-gray-500">PNG, JPG, or GIF (MAX. 10MB each)</p>
-                </div>
-                <input 
-                  id="dropzone-file" 
-                  type="file" 
-                  className="hidden" 
-                  multiple 
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e.target.files, 'images')}
-                />
-              </label>
-            </div>
             
-            {formData.images.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Images ({formData.images.length})</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                  {formData.images.map((file, index) => (
-                    <div key={index} className="relative group">
-                      <img 
-                        src={URL.createObjectURL(file)} 
-                        alt={`Preview ${index + 1}`} 
-                        className="w-full h-24 object-cover rounded-md border"
-                      />
-                      <button
-                        type="button"
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => {
-                          const newImages = [...formData.images];
-                          newImages.splice(index, 1);
-                          setFormData(prev => ({
-                            ...prev,
-                            images: newImages
-                          }));
-                        }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         );
       
       case 4: // Review
         return (
           <div className="space-y-6">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium mb-4">Auction Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Title</p>
-                  <p className="font-medium">{formData.auctionName || 'Not provided'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Description</p>
-                  <p className="font-medium">
-                    {formData.termsAndConditions ? 
-                      (formData.termsAndConditions.length > 50 ? `${formData.termsAndConditions.substring(0, 50)}...` : formData.termsAndConditions) : 
-                      'Not provided'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Start Date</p>
-                  <p className="font-medium">
-                    {formData.startDate ? new Date(formData.startDate).toLocaleString() : 'Not set'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">End Date</p>
-                  <p className="font-medium">
-                    {formData.endDate ? new Date(formData.endDate).toLocaleString() : 'Not set'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium mb-4">Product Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Product Name</p>
-                  <p className="font-medium">{formData.productName || 'Not provided'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Category</p>
-                  <p className="font-medium">{formData.category || 'Not selected'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Condition</p>
-                  <p className="font-medium capitalize">{formData.condition || 'Not specified'}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium mb-4">Pricing</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Starting Price</p>
-                  <p className="font-medium">
-                    {formData.startPrice ? `$${parseFloat(formData.startPrice).toFixed(2)}` : 'Not set'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Reserve Price</p>
-                  <p className="font-medium">
-                    {formData.reservePrice ? `$${parseFloat(formData.reservePrice).toFixed(2)}` : 'No reserve price'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Buy Now Price</p>
-                  <p className="font-medium">
-                    {formData.buyNowPrice ? `$${parseFloat(formData.buyNowPrice).toFixed(2)}` : 'Not set'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium mb-4">Images</h3>
-              {formData.images.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                  {formData.images.map((file, index) => (
-                    <img 
-                      key={index} 
-                      src={URL.createObjectURL(file)} 
-                      alt={`Preview ${index + 1}`} 
-                      className="w-full h-24 object-cover rounded-md border"
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">No images uploaded</p>
-              )}
-            </div>
+            
           </div>
         );
       
@@ -777,15 +1187,36 @@ const CreateAuction: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto p-5">
+      <PageHeader
+        title="Create New Auction"
+        subtitle="Fill in the details below to create a new auction"
+        breadcrumbs={breadcrumbs}
+        showBackButton={true}
+        backButtonText="Back to Auctions"
+        backButtonUrl="/auctions"
+        className="mb-8"
+        rightContent={
+          <div className="flex items-center h-full">
+            <div className="border-l border-gray-200 dark:border-gray-700 pl-4 ml-4 h-12 flex flex-col justify-center space-y-1">
+              <div className="flex items-center">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 w-20">Auction:</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white ml-3">
+                  {formData.name || ''}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 w-20">Event Code:</span>
+                <span className="font-mono text-sm bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded ml-3">
+                    {formData.eventCode}
+                  </span>
+              </div>
+            </div>
+          </div>
+        }
+      />
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Create New Auction</CardTitle>
-          <p className="text-sm text-gray-500">
-            Complete all the steps to create your auction listing
-          </p>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {/* Stepper */}
           <Stepper 
             steps={steps} 

@@ -17,6 +17,7 @@ interface PageHeaderProps {
   backButtonUrl?: string;
   className?: string;
   children?: React.ReactNode;
+  rightContent?: React.ReactNode;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({
@@ -28,6 +29,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   backButtonUrl,
   className = '',
   children,
+  rightContent,
 }) => {
   const navigate = useNavigate();
 
@@ -78,21 +80,20 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         </nav>
       )}
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center space-x-3 flex-1">
           {showBackButton && (
             <button
               onClick={handleBack}
-              className="flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:bg-gray-100 
+              className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full text-gray-600 hover:bg-gray-100 
                        dark:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-200 border border-gray-300 dark:border-gray-600
                        focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-              title={backButtonText || 'Go back'}
               aria-label={backButtonText || 'Go back'}
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
           )}
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {title}
             </h1>
@@ -103,7 +104,18 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             )}
           </div>
         </div>
-        {children && <div className="ml-4">{children}</div>}
+        
+        {rightContent && (
+          <div className="md:ml-4 flex-shrink-0">
+            {rightContent}
+          </div>
+        )}
+        
+        {children && (
+          <div className="md:ml-4 flex-shrink-0">
+            {children}
+          </div>
+        )}
       </div>
     </div>
   );
