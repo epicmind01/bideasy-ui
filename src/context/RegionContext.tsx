@@ -29,6 +29,7 @@ export const RegionProvider = ({ children }: { children: ReactNode }) => {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useRegion = () => {
   const context = useContext(RegionContext)
   if (!context) {

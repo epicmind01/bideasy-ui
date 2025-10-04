@@ -32,8 +32,8 @@ export const DatePicker = ({
   toDate,
   showTimeSelect = true,
   timeIntervals = 15,
-  timeCaption = 'Time',
-  dateFormat = 'MMM d, yyyy h:mm aa',
+  timeCaption: _timeCaption = 'Time',
+  dateFormat: _dateFormat = 'MMM d, yyyy h:mm aa',
   children,
   ...props
 }: DatePickerProps) => {

@@ -505,8 +505,8 @@ export interface IAddRfqTimePayload {
   paymentTerms: string;
   rfqAttachments: any[];
   preferredVendorsByPlant: {
-    plantCode: String;
-    distributorName: String;
+    plantCode: string;
+    distributorName: string;
   }[];
 }
 
@@ -2095,7 +2095,7 @@ export interface Budget{
 
   GLAcountid:string;
 budgetId:string;
-RFQID:String;
+RFQID:string;
 AuctionId:string;
 creditAmount:string;
 debitAmount:string;

@@ -3,6 +3,7 @@ import { SidebarProvider, useSidebar } from './context/SidebarContext';
 import { RegionProvider } from './context/RegionContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import { Toaster } from 'react-hot-toast';
 
 export function AppShell() {
   const { isExpanded, isHovered } = useSidebar();
@@ -27,6 +28,7 @@ export default function App() {
   return (
     <SidebarProvider>
       <RegionProvider>
+        <Toaster />
         <AppShell />
       </RegionProvider>
     </SidebarProvider>

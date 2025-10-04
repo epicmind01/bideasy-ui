@@ -98,7 +98,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (data?.user) {
-      const { password, deletedAt, ...userData } = data.user;
+      const { password: _password, deletedAt: _deletedAt, ...userData } = data.user;
       const updatedProfile = {
         ...userData,
         lastLogin: new Date().toISOString(),

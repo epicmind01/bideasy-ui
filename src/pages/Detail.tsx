@@ -2,7 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Button from '../components/ui/button/Button';
 import { auctionDetail } from '../mocks/auctionDetail';
-import { FileText, Users, Clock, Calendar, MapPin, Box, ChevronRight } from 'lucide-react';
+import { FileText, Users, Calendar, MapPin, ChevronRight } from 'lucide-react';
 
 type StatusType = 'LIVE' | 'COMPLETED' | 'PENDING' | 'CANCELLED' | 'WON' | 'LOST' | 'ACCEPTED' | string;
 
@@ -17,7 +17,7 @@ const statusColors: Record<StatusType, string> = {
   '': 'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-400', // Fallback
 };
 
-const DetailCard = ({ 
+const _DetailCard = ({ 
   icon, 
   title, 
   value, 
@@ -84,7 +84,7 @@ export default function Detail() {
     targetCounts.forEach((target, index) => {
       animateCount(0, target, index);
     });
-  }, []);
+  }, [targetCounts]);
   
   const stats = [
     { 
@@ -200,7 +200,7 @@ export default function Detail() {
 
       {/* Animated Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => (
+        {stats.map((stat, _index) => (
           <div 
             key={stat.label}
             className={`${stat.bgColor} ${stat.borderColor} rounded-r-lg shadow-sm p-5 transition-all duration-300 hover:shadow-md`}

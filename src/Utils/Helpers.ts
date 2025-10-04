@@ -1,120 +1,87 @@
-export const LOCAL_STORAGE_KEYS = {
-    TOKEN: 'token',
-    USER_TYPE: 'userType',
-    USER: 'user',
-    USER_ID: 'userId',
-    USER_NAME: 'username',
-    USER_CODE: 'userCode',
-    IS_AUTHENTICATED: 'isAuth',
-    PERMISSIONS: 'permissions',
-  };
-  
+// Helper functions for the application
 
-export const setLocalItem = (key: string, value: any) => {
-    localStorage.setItem(key, JSON.stringify(value));
-  };
+export const formatDate = (dateString: string | Date): string => {
+  if (!dateString) return 'N/A';
   
-  export const getLocalItem = (key: string): any => {
-  const value = localStorage.getItem(key);
-  if (value === null) return null;
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
   
-  try {
-    // Try to parse as JSON, but return as-is if it's not valid JSON (like JWT tokens)
-    return JSON.parse(value);
-  } catch (e) {
-    // If it's not valid JSON, return the raw string
-    return value;
-  }
-};
+  if (isNaN(date.getTime())) return 'Invalid Date';
   
-  export const removeLocalItem = (key: string) => {
-    localStorage.removeItem(key);
-  };
-  
-  export const resetLocalStorage = () => {
-    removeLocalItem(LOCAL_STORAGE_KEYS.TOKEN);
-    removeLocalItem(LOCAL_STORAGE_KEYS.IS_AUTHENTICATED);
-    removeLocalItem(LOCAL_STORAGE_KEYS.USER);
-    removeLocalItem(LOCAL_STORAGE_KEYS.USER_TYPE);
-    removeLocalItem(LOCAL_STORAGE_KEYS.PERMISSIONS);
-  };
-  // Helper function to check if a user has a specific permission
-export const hasPermission = (required: string) => {
-  const permissions = getLocalItem(LOCAL_STORAGE_KEYS.PERMISSIONS);
-  return permissions?.includes(required);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 };
 
-// Helper function to check if a user has any of the required permissions
-export const hasAnyPermission = (requiredList: string[]) => {
-  const permissions = getLocalItem(LOCAL_STORAGE_KEYS.PERMISSIONS);
-  return requiredList.some((perm) => permissions?.includes(perm));
+export const formatDateTime = (dateString: string | Date): string => {
+  if (!dateString) return 'N/A';
+  
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  
+  if (isNaN(date.getTime())) return 'Invalid Date';
+  
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
-/**
- * Formats a number as Indian Rupees (INR)
- * @param amount - The amount to format (can be number or string)
- * @returns Formatted currency string with Indian number format (e.g., "₹ 1,00,000")
- */
-import { format, differenceInMilliseconds } from 'date-fns';
-
-export const formatAuctionDate = (dateString: string | Date): string => {
-  try {
-    return format(new Date(dateString), 'MMM d, yyyy hh:mm a');
-  } catch (e) {
-    return 'Invalid date';
-  }
+export const getLocalItem = (key: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(key);
 };
 
-export interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-  isEnded: boolean;
-}
-
-export const calculateTimeLeft = (endDate: Date | string): TimeLeft => {
-  const end = new Date(endDate);
-  const now = new Date();
-  
-  if (isNaN(end.getTime())) {
-    return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true };
-  }
-
-  const diff = differenceInMilliseconds(end, now);
-
-  if (diff <= 0) {
-    return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true };
-  }
-
-  const days = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
-  const hours = Math.max(0, Math.floor((diff / (1000 * 60 * 60)) % 24));
-  const minutes = Math.max(0, Math.floor((diff / 1000 / 60) % 60));
-  const seconds = Math.max(0, Math.floor((diff / 1000) % 60));
-
-  return { days, hours, minutes, seconds, isEnded: false };
+export const setLocalItem = (key: string, value: string): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(key, value);
 };
 
-export const formatTimeLeft = (timeLeft: TimeLeft): string => {
-  if (timeLeft.isEnded) return 'Auction ended';
-  
-  const { days, hours, minutes, seconds } = timeLeft;
-  return `${days > 0 ? `${days}d ` : ''}${hours.toString().padStart(2, '0')}h : ${minutes.toString().padStart(2, '0')}m : ${seconds.toString().padStart(2, '0')}s`;
+export const removeLocalItem = (key: string): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(key);
 };
 
-export const formatIndianCurrency = (amount: number | string): string => {
-  // Convert string to number if needed
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
-  // Handle invalid numbers
-  if (isNaN(num)) return '₹ 0';
-  
-  // Format the number with Indian locale
+export const formatCurrency = (amount: number, currency: string = 'INR'): string => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0, // No decimal places for whole numbers
-    currencyDisplay: 'symbol',
-  }).format(num).replace('₹', '₹ '); // Add space after ₹ for better readability
+    currency: currency,
+  }).format(amount);
+};
+
+export const formatNumber = (number: number): string => {
+  return new Intl.NumberFormat('en-IN').format(number);
+};
+
+export const truncateText = (text: string, maxLength: number): string => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+};
+
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
+export const throttle = <T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): ((...args: Parameters<T>) => void) => {
+  let inThrottle: boolean;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
 };

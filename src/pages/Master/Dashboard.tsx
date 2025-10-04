@@ -29,7 +29,7 @@ type MasterDataGroup = {
   items: MasterDataItem[];
 };
 
-type ApiResponse<T = any> = {
+type _ApiResponse<T = any> = {
   data: T;
   message?: string;
   success?: boolean;
@@ -68,7 +68,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     void fetchData();
-  }, []);
+  }, [fetchData]);
 
   const filteredGroups = React.useMemo(() => {
     if (!getCardsRecords?.data) return [];

@@ -51,7 +51,7 @@ export default function RFQTable() {
     targetCounts.forEach((target, index) => {
       animateCount(0, target, index);
     });
-  }, []);
+  }, [targetCounts]);
 
   const stats = [
     { 

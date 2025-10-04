@@ -506,3 +506,32 @@ export const useGetAllActivePlants = () => {
     },
   });
 };
+export const useGetBusinessDepartmentsForRFQApi = () => {
+  return useQuery({
+    queryKey: ["businessDepartmentsForRFQ"],
+    queryFn: async () => {
+      try {
+        const token = getLocalItem(LOCAL_STORAGE_KEYS.TOKEN);
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+
+        const response = await client.get(ENDPOINTS.businessDepartment, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        return response.data;
+      } catch (error) {
+        console.error("API Error:", error);
+        throw error;
+      }
+    },
+    meta: {
+      onError: (error: unknown) => {
+        console.error("Query Error in meta:", error);
+      },
+    },
+  });
+};

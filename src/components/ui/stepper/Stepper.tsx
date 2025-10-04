@@ -26,7 +26,7 @@ export const Stepper: React.FC<StepperProps> = ({
         {steps.map((step, stepIdx) => {
           const isCompleted = stepIdx < currentStep;
           const isCurrent = stepIdx === currentStep;
-          const isUpcoming = stepIdx > currentStep;
+          const _isUpcoming = stepIdx > currentStep;
 
           return (
             <li

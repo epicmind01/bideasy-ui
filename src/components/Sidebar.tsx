@@ -10,7 +10,6 @@ import {
   FileIcon,
   PieChartIcon,
   ListIcon,
-  DocsIcon,
   PencilIcon
 } from "../icons/index";
 
@@ -34,7 +33,7 @@ const navItems: NavItem[] = [
     icon: BoxCubeIcon,
     name: "PROCUREMENT",
     subItems: [
-               { name: "RFQ", path: "/salesQuantityForecast", pro: false }, 
+               { name: "RFQ", path: "/rfq", pro: false }, 
                { name: "AUCTION", path: "/auction", pro: false },
                { name: "RA Bills", path: "/stockReplenishmentForecast", pro: false },
               ],
@@ -43,10 +42,10 @@ const navItems: NavItem[] = [
     icon: FileIcon,
     name: "ORDER MANAGE",
     subItems: [
-               { name: "PR", path: "/salesQuantityForecast", pro: false }, 
-               { name: "PO", path: "/cashFlowForecast", pro: false },
-               { name: "GRN", path: "/stockReplenishmentForecast", pro: false },
-               { name: "ASN", path: "/stockReplenishmentForecast", pro: false },
+               { name: "PR", path: "/purchase-requests", pro: false }, 
+               { name: "PO", path: "/purchase-order", pro: false },
+               { name: "GRN", path: "/grn-list", pro: false },
+               { name: "ASN", path: "/asn-list", pro: false },
                { name: "INVOICE Management", path: "/stockReplenishmentForecast", pro: false },
               ],
   },
@@ -54,7 +53,7 @@ const navItems: NavItem[] = [
     icon: PencilIcon,
     name: "CONTRACT MANAGE",
     subItems: [
-               { name: "ARC", path: "/contracts/arc", pro: false },
+               { name: "ARC", path: "/arc-reports", pro: false },
                { name: "CONTRACTS", path: "/contracts", pro: false },
               ],
   },

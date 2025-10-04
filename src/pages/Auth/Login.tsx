@@ -1,11 +1,10 @@
 "use client";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ChevronLastIcon, Eye, EyeClosed } from "lucide-react";
 import { useAuth } from "../../hooks/API/useAuth";
 
 export default function LoginForm() {
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [loading, setLoading] = useState(false);
