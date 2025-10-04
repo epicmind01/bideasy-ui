@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { useRFQContext } from '../../../context/RFQContext';
 import Button from '../../ui/button/Button';
-import { DataTable } from '../../ui/data-table/DataTableFixed';
+import { DataTable } from '../../ui/data-table/DataTable';
 import SelectedItemsDisplay from '../SelectedItemsDisplay';
 import QuantityInput from '../QuantityInput';
 import type { ColumnDef } from '@tanstack/react-table';

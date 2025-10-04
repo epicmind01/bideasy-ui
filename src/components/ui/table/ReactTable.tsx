@@ -1,5 +1,5 @@
 import React from 'react';
-import { DataTable } from '../data-table/DataTableFixed';
+import { DataTable } from '../data-table/DataTable';
 
 interface ReactTableProps {
   data: any[];

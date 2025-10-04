@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import Button from '../../components/ui/button/Button';
 import Badge from '../../components/ui/badge/Badge';
 import PageHeader from '../../components/ui/page-header/PageHeader';
-import { DataTable } from '../../components/ui/data-table/DataTableFixed';
+import { DataTable } from '../../components/ui/data-table/DataTable';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { MdDelete } from 'react-icons/md';
-import { DataTable } from '../../components/ui/data-table/DataTableFixed';
+import { DataTable } from '../../components/ui/data-table/DataTable';
 import { useGetActiveBusinessDepartment } from '../../hooks/API/useCommonApis';
 import { useGetAllPlantsList } from '../../hooks/API/usePlantMasterApis';
 import { useUpdatePurchaseRequestApi, useGetPurchaseRequestByIdApi } from '../../hooks/API/PurchaseRequestApi';

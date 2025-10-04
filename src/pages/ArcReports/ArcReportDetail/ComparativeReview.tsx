@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { DataTable } from '../../../components/ui/data-table/DataTableFixed';
+import { DataTable } from '../../../components/ui/data-table/DataTable';
 import { type ColumnDef } from '@tanstack/react-table';
 import Badge from '../../../components/ui/badge/Badge';
-import type { ArcReportData } from '../../../Typings/ArcReportTypes';
 
 interface ComparativeReviewProps {
   arcRfqItems: any[];

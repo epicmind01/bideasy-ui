@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useGetPurchaseRequestByIdApi, useApproveOrRejectPurchaseRequestApi } from '../../hooks/API/PurchaseRequestApi';
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
-import { DataTable } from '../../components/ui/data-table/DataTableFixed';
+import { DataTable } from '../../components/ui/data-table/DataTable';
 import { formatDate } from '../../Utils/Helpers';
 import Badge from '../../components/ui/badge/Badge';
 import { Modal } from '../../components/ui/modal/Modal';

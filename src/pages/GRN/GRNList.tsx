@@ -5,7 +5,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
 import Badge from '../../components/ui/badge/Badge';
-import { DataTable } from '../../components/ui/data-table/DataTableFixed';
+import { DataTable } from '../../components/ui/data-table/DataTable';
 import { useGetGoodsReceivedNoteList } from '../../hooks/API/GRNApi';
 // import { formatDate } from '../../Utils/Helpers';
 import type { GoodReceiptNote } from '../../Typings/GRNTypes';

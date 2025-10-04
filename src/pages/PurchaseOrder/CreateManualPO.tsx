@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { MdDelete } from 'react-icons/md';
 import { FaArrowLeft } from 'react-icons/fa';
-import { DataTable } from '../../components/ui/data-table/DataTableFixed';
+import { DataTable } from '../../components/ui/data-table/DataTable';
 import { 
   useGetAllActiveCompanyCodes,
   useGetActiveBusinessDepartment 
