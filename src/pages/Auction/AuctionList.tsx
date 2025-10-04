@@ -1,8 +1,10 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, addDays, addHours, isAfter } from 'date-fns';
+import { addDays, format, isAfter } from 'date-fns';
 import { type ColumnDef } from '@tanstack/react-table';
-import DateTimePicker from '../../components/ui/date-picker/DateTimePicker';
+import { X, ChevronDown, Filter } from 'lucide-react';
+import { DatePicker } from '../../components/ui/date-picker/DatePicker';
+import { Dropdown } from '../../components/ui/dropdown/Dropdown';
 import { Modal } from '../../components/ui/modal/Modal';
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
@@ -17,11 +19,26 @@ const AuctionList = () => {
     pageIndex: 0,
     pageSize: 10,
   });
+  // Filter state
   const [searchQuery, _setSearchQuery] = useState('');
   const [activeTab, _setActiveTab] = useState('All');
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [auctionToDelete, setAuctionToDelete] = useState<AuctionData | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: '',
+    startDate: null as Date | null,
+    endDate: null as Date | null
+  });
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  
+  // Breadcrumbs for the page header
+  const breadcrumbs = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Auctions', active: true }
+  ];
   
   // Clone modal state
   const [cloneModalOpen, setCloneModalOpen] = useState(false);
@@ -40,12 +57,67 @@ const AuctionList = () => {
   const { mutate: deleteAuction, isPending: isDeleting } = useDeleteAuctionApi();
   const { mutate: cloneAuction, isPending: isCloning } = useCloneAuctionApi();
   
+  // Apply filters to the API call
   const { data: auctionData, isLoading, refetch } = useGetAuctionListApi({
     page: pagination.pageIndex + 1,
     pageSize: pagination.pageSize,
     search: searchQuery,
-    status: activeTab === 'All' ? undefined : activeTab.toUpperCase()
+    status: activeTab === 'All' ? undefined : activeTab.toUpperCase(),
+    startDate: filters.startDate ? filters.startDate.toISOString() : undefined,
+    endDate: filters.endDate ? filters.endDate.toISOString() : undefined
   });
+
+  // Status options for the filter dropdown
+  const statusOptions = [
+    { value: '', label: 'All Statuses' },
+    { value: 'DRAFT', label: 'Draft' },
+    { value: 'SCHEDULED', label: 'Scheduled' },
+    { value: 'LIVE', label: 'Live' },
+    { value: 'CLOSED', label: 'Closed' },
+    { value: 'FINALIZED', label: 'Finalized' },
+    { value: 'CANCELLED', label: 'Cancelled' }
+  ];
+
+  // Handle filter changes
+  const handleFilterChange = (field: string, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setFilters({
+      status: '',
+      startDate: null,
+      endDate: null
+    });
+    setShowFilters(false);
+    refetch();
+  };
+
+  // Apply filters
+  const applyFilters = () => {
+    refetch();
+    setShowFilters(false);
+  };
+
+  // Handle filter date change
+  const handleFilterDateChange = (field: 'startDate' | 'endDate', date?: Date) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: date || null
+    }));
+  };
+  
+  // Handle clone form date change
+  const handleCloneDateChange = (field: 'startTime' | 'endTime', date?: Date) => {
+    setCloneForm(prev => ({
+      ...prev,
+      [field]: date || null
+    }));
+  };
   
     // Define columns
     const columns = useMemo<ColumnDef<AuctionData>[]>(
@@ -300,30 +372,6 @@ const AuctionList = () => {
     }));
   };
 
-  // Handle date change for DatePicker
-  const handleDateChange = (field: 'startTime' | 'endTime', date: Date | null) => {
-    if (date === null) {
-      setCloneForm(prev => ({ ...prev, [field]: null }));
-      return;
-    }
-    
-    setCloneForm(prev => {
-      const newForm = { ...prev, [field]: date };
-      
-      // If we're updating startTime and it's after the current endTime,
-      // update endTime to be 1 hour after the new startTime
-      if (field === 'startTime' && newForm.endTime && isAfter(date, newForm.endTime)) {
-        newForm.endTime = addHours(date, 1);
-      }
-      // If we're updating endTime and it's before the startTime,
-      // update it to be 1 hour after startTime
-      else if (field === 'endTime' && newForm.startTime && isAfter(newForm.startTime, date)) {
-        newForm.endTime = addHours(newForm.startTime, 1);
-      }
-      
-      return newForm;
-    });
-  };
   
   const isEndDateValid = useMemo(() => {
     if (!cloneForm.startTime || !cloneForm.endTime) return true;
@@ -366,12 +414,119 @@ const AuctionList = () => {
         <PageHeader 
           title="Auction" 
           subtitle="Manage your Auction processes and vendor responses"
+          breadcrumbs={breadcrumbs}
           showBackButton={true}
         >
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline">Filters</Button>
-            <Button size="sm" variant="primary" onClick={() => navigate('/auction/create')}>
-              + Create Auction
+          <div className="flex items-center gap-2 relative">
+              <div className="relative" ref={filterRef}>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-1 dropdown-toggle"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Filters</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'transform rotate-180' : ''}`} />
+                </Button>
+                
+                <Dropdown 
+                  isOpen={showFilters} 
+                  onClose={() => setShowFilters(false)}
+                  className="w-80 p-4 mt-1"
+                >
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-medium text-gray-900 dark:text-white">Filters</h3>
+                      <button 
+                        onClick={() => setShowFilters(false)}
+                        className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                    
+                    {/* Status Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Status
+                      </label>
+                      <select
+                        value={filters.status}
+                        onChange={(e) => handleFilterChange('status', e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      >
+                        {statusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Date Range Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Start Date
+                      </label>
+                      <DatePicker
+                        selected={filters.startDate || undefined}
+                        onSelect={(date) => handleFilterDateChange('startDate', date)}
+                        placeholder="Select start date"
+                        className="w-full"
+                        showTimeSelect={false}
+                        dateFormat="MMM d, yyyy"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        End Date
+                      </label>
+                      <DatePicker
+                        selected={filters.endDate || undefined}
+                        onSelect={(date) => handleFilterDateChange('endDate', date)}
+                        placeholder="Select end date"
+                        className="w-full"
+                        fromDate={filters.startDate || new Date()}
+                        showTimeSelect={false}
+                        dateFormat="MMM d, yyyy"
+                      />
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex justify-between pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={resetFilters}
+                        className="text-sm"
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        onClick={applyFilters}
+                        className="text-sm"
+                      >
+                        Apply Filters
+                      </Button>
+                    </div>
+                  </div>
+                </Dropdown>
+            </div>
+            
+            <Button 
+              size="sm" 
+              variant="primary" 
+              onClick={() => navigate('/auction/create')}
+              className="flex items-center gap-1"
+            >
+              <span>+</span>
+              <span>Create Auction</span>
             </Button>
           </div>
         </PageHeader>
@@ -541,11 +696,11 @@ const AuctionList = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Start Time (Optional)
             </label>
-              <DateTimePicker
-                selected={cloneForm.startTime}
-                onChange={(date) => handleDateChange('startTime', date)}
+              <DatePicker
+                selected={cloneForm.startTime || undefined}
+                onSelect={(date) => handleCloneDateChange('startTime', date)}
                 placeholder="Select start time"
-                minDate={new Date()}
+                fromDate={new Date()}
                 showTimeSelect
                 timeIntervals={15}
                 dateFormat="MMMM d, yyyy h:mm aa"
@@ -558,16 +713,16 @@ const AuctionList = () => {
               End Time (Optional)
             </label>
               <div className="w-full">
-                <DateTimePicker
-                  selected={cloneForm.endTime}
-                  onChange={(date) => handleDateChange('endTime', date)}
+                <DatePicker
+                  selected={cloneForm.endTime || undefined}
+                  onSelect={(date) => handleCloneDateChange('endTime', date)}
                   placeholder="Select end time"
-                  minDate={cloneForm.startTime || new Date()}
+                  fromDate={cloneForm.startTime || new Date()}
                   showTimeSelect
                   timeIntervals={15}
                   dateFormat="MMMM d, yyyy h:mm aa"
                   timeCaption="End Time"
-                  className={!isEndDateValid ? "border-red-500" : ""}
+                  className={`w-full ${!isEndDateValid ? "border-red-500" : ""}`}
                 />
                 {!isEndDateValid && (
                   <p className="mt-1 text-sm text-red-600">
