@@ -22,6 +22,11 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
+    icon: PieChartIcon,
+    name: "Master Dashboard",
+    path: "/master"
+  },
+  {
     icon: GroupIcon,
     name: "Supplier Lifecycle",
     subItems: [
@@ -294,14 +299,14 @@ const Sidebar: React.FC = () => {
             <>
               <img
                 className="dark:hidden ml-1 "
-                src="/images/logo/logo.svg"
+                src="https://bidezy.com/buyer/images/logo/logo.svg"
                 alt="Logo"
                 width={150}
                 height={40}
               />
               <img
                 className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
+                src="https://bidezy.com/buyer/images/logo/logo-dark.svg"
                 alt="Logo"
                 width={150}
                 height={40}

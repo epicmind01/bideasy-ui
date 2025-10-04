@@ -3,13 +3,14 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLastIcon, Eye, EyeClosed } from "lucide-react";
 import { useAuth } from "../../hooks/API/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
+  const { isAuthenticated } = useAuth();
 
   const { login } = useAuth();
 
@@ -24,8 +25,10 @@ export default function LoginForm() {
     const password = formData.get('password') as string;
     try {
       await login(email, password);
-      window.location.href = "/dashboard";
+      setLoading(false);
+      navigate("/");
     } catch (err) {
+      setLoading(false);
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -40,14 +43,16 @@ export default function LoginForm() {
     
  <div className="flex flex-col bg-gradient-to-br from-slate-100/30 via-white to-blue-100/20 flex-1 lg:w-1/2 w-full">
       <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
-    <Link
-      to="/"
-      className="inline-flex items-center gap-2 text-sm text-slate-600 transition-all duration-200 hover:text-blue-600 font-medium"
-    >
-      <ChevronLastIcon  />
-      Back to dashboard
-    </Link>
-  </div>
+        {!isAuthenticated() && (
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-sm text-slate-600 transition-all duration-200 hover:text-blue-600 font-medium"
+            >
+              <ChevronLastIcon  />
+              Back to dashboard
+            </Link>
+        )}  
+</div>
 
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>

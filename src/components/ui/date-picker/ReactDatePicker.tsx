@@ -29,7 +29,7 @@ interface ReactDatePickerProps {
 
 const CustomInput = React.forwardRef<HTMLButtonElement, CustomInputProps>(
   ({ value, onClick, placeholder, className, disabled, ...props }, ref) => {
-    <Button
+    return <Button
       type="button"
       variant="outline"
       onClick={onClick}
@@ -44,7 +44,7 @@ const CustomInput = React.forwardRef<HTMLButtonElement, CustomInputProps>(
     >
       <CalendarIcon className="mr-2 h-4 w-4" />
       {value || placeholder || 'Select date and time'}
-    </Button>
+    </Button>;
   }
 );
 

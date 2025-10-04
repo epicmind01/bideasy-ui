@@ -9,7 +9,8 @@ import {
   CheckCircle, 
   XCircle, 
   User, 
-  IndianRupee
+  IndianRupee,
+  UserIcon
 } from 'lucide-react';
 import { useGetAuctionByIdApi, useNotifyVendorToAuctionApi } from '../../hooks/API/AuctionApi';
 import { formatIndianCurrency,  calculateTimeLeft, formatTimeLeft, formatAuctionDate } from '../../Utils/Helpers';
@@ -330,7 +331,7 @@ export default function AuctionDetail() {
                       <div className="text-xs font-medium uppercase tracking-wider text-gray-500">
                         Event Category
                       </div>
-                      <div className="mt-1 text-base">Construction</div>
+                      <div className="mt-1 text-base">{auction.auctionCategory?.name}</div>
                     </div>
                     <div className="col-span-1">
                       <div className="text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -802,6 +803,7 @@ export default function AuctionDetail() {
         )}
 
         {activeTab === 'documents' && (
+          <>
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 text-lg font-medium">Auction Documents</h3>
             {auction.eventDocuments && auction.eventDocuments.length > 0 ? (
@@ -848,6 +850,99 @@ export default function AuctionDetail() {
               </div>
             )}
           </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-4 text-lg font-medium">Co Creators</h3>
+            {auction.coCreators && auction.coCreators.length > 0 ? (
+              <div className="overflow-hidden shadow ring-1 ring-black/5 sm:rounded-lg">
+                <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {auction.coCreators.map((creator) => (
+                    <li key={creator.id} className="px-4 py-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 flex-shrink-0">
+                            <UserIcon className="h-10 w-10 text-gray-400" aria-hidden="true" />
+                          </div>
+                          <div className="ml-4">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {creator.buyer?.name}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {creator.buyer?.email}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="ml-4 flex-shrink-0">
+                          <a
+                            href={`mailto:${creator.buyer?.email}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            Contact
+                          </a>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="rounded-md bg-gray-50 p-4 text-center dark:bg-gray-700">
+                <UserIcon className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No co-creators</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  No co-creators have been added for this auction.
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-4 text-lg font-medium">Observers</h3>
+            {auction.observers && auction.observers.length > 0 ? (
+              <div className="overflow-hidden shadow ring-1 ring-black/5 sm:rounded-lg">
+                <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {auction.observers.map((observer) => (
+                    <li key={observer.id} className="px-4 py-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 flex-shrink-0">
+                            <UserIcon className="h-10 w-10 text-gray-400" aria-hidden="true" />
+                          </div>
+                          <div className="ml-4">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {observer.buyer?.name}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {observer.buyer?.email}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="ml-4 flex-shrink-0">
+                          <a
+                            href={`mailto:${observer.buyer?.email}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            Contact
+                          </a>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="rounded-md bg-gray-50 p-4 text-center dark:bg-gray-700">
+                <UserIcon className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No observers</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  No observers have been added for this auction.
+                </p>
+              </div>
+            )}
+          </div>
+          </>
         )}
       </div>
     </div>

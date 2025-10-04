@@ -19,6 +19,7 @@ export interface AuctionResponse {
 }
 
 export interface AuctionData {
+  auctionCategory: {name: string; id: string};
   plant: any;
   id: string;
   buyerId: string;

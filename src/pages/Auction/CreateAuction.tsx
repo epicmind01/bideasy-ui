@@ -1,47 +1,176 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+// Removed unused import
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import  Button  from '../../components/ui/button/Button';
+import Button from '../../components/ui/button/Button';
 import { Input } from '../../components/ui/input';
 import { Stepper } from '../../components/ui/stepper/Stepper';
 import { cn } from '../../lib/utils';
+import Select from '../../components/form/Select';
+import MultiSelect from '../../components/form/MultiSelect';
+import FileInput from '../../components/form/input/FileInput';
+import { Editor } from '../../components/editor/Editor';
+import { 
+  useGetActiveAuctionCategories, 
+  useGetAllActivePlants,
+  useGetActiveBuyers 
+} from '../../hooks/API/useCommonApis';
 
 // Define the steps for the stepper
 const steps = [
-  { id: 'auction-details', name: 'Auction Details' },
-  { id: 'product-info', name: 'Product Info' },
-  { id: 'pricing', name: 'Pricing' },
-  { id: 'images', name: 'Images' },
-  { id: 'review', name: 'Review' },
+  { id: 'auction-info', name: 'Auction Info' },
+  { id: 'auction-behavior', name: 'Auction Behavior' },
+  { id: 'item-info', name: 'Item Info' },
+  { id: 'participants', name: 'Participants' },
+  { id: 'schedule', name: 'Schedule' },
 ];
+
+// Types for form data
+type FormData = {
+  // Step 1: Auction Info
+  auctionName: string;
+  eventCategory: string;
+  businessDepartment: string;
+  coCreators: string[];
+  plantName: string;
+  termsAndConditions: string;
+  eventDocuments: File[];
+  vendorDocuments: File[];
+  observers: string[];
+  
+  // Step 2: Auction Behavior
+  startDate: string;
+  endDate: string;
+  
+  // Step 3: Item Info
+  productName: string;
+  category: string;
+  condition: string;
+  specifications: string;
+  
+  // Step 4: Pricing
+  startPrice: string;
+  reservePrice: string;
+  buyNowPrice: string;
+  
+  // Step 5: Images
+  images: File[];
+};
+
+// Type for select options
+type OptionType = {
+  value: string;
+  label: string;
+  text?: string;
+  selected?: boolean;
+};
+
+// Type for MultiSelect options
+type MultiSelectOption = {
+  value: string;
+  text: string;
+  selected: boolean;
+};
 
 const CreateAuction: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState({
-    // Step 1: Auction Details
-    title: '',
-    description: '',
+  const [formData, setFormData] = useState<FormData>({
+    // Step 1
+    auctionName: '',
+    eventCategory: '',
+    businessDepartment: '',
+    coCreators: [],
+    plantName: '',
+    termsAndConditions: '',
+    eventDocuments: [],
+    vendorDocuments: [],
+    observers: [],
+    // Step 2
     startDate: '',
     endDate: '',
-    
-    // Step 2: Product Info
+    // Step 3
     productName: '',
     category: '',
-    condition: 'new',
+    condition: '',
     specifications: '',
-    
-    // Step 3: Pricing
+    // Step 4
     startPrice: '',
     reservePrice: '',
     buyNowPrice: '',
-    
-    // Step 4: Images
-    images: [] as File[],
-    
-    // Step 5: Review (no additional fields, just for confirmation)
+    // Step 5
+    images: []
   });
+
+  // Define types for API responses
+  type ApiResponseItem = {
+    id: string | number;
+    name: string;
+    [key: string]: any;
+  };
+
+  // Fetch data for dropdowns with proper typing
+  const { data: eventCategoriesData = { data: [] } } = useGetActiveAuctionCategories();
+  const { data: plantsData = { data: [] } } = useGetAllActivePlants();
+  const { data: buyersData = { data: [] } } = useGetActiveBuyers();
+  const businessDepartmentlist = [
+    { id: "REPAIR_AND_MAINTENANCE", name: "Repair & Maintenance" },
+    { id: "PROJECT", name: "PROJECT" }
+  ];
   
-  const navigate = useNavigate();
+  // Extract data arrays from API responses
+  const eventCategories = eventCategoriesData.data || [];
+  const plants = plantsData.data || [];
+  const buyers = buyersData.data || [];
+  
+  // Convert businessDepartmentlist to match ApiResponseItem type
+  const businessDepartments = businessDepartmentlist.map(dept => ({
+    id: dept.id,
+    name: dept.name
+  }));
+
+  // Format dropdown options with type safety
+  const formatOptions = <T extends ApiResponseItem>(
+    data: T[] = [], 
+    valueKey: keyof T = 'id', 
+    labelKey: keyof T = 'name' as keyof T,
+    includeTerms: boolean = false
+  ): (OptionType & { termsAndConditions?: string })[] => {
+    if (!Array.isArray(data)) return [];
+    return data.map(item => ({
+      value: String(item?.[valueKey] ?? ''),
+      label: String(item?.[labelKey] ?? ''),
+      ...(includeTerms && { termsAndConditions: item.termsAndConditions || '' })
+    }));
+  };
+
+  // Format options for MultiSelect with type safety
+  const formatMultiSelectOptions = (options: OptionType[], selectedValues: string[] = []): MultiSelectOption[] => {
+    return options.map(option => ({
+      value: option.value,
+      text: option.label,
+      selected: selectedValues.includes(option.value)
+    }));
+  };
+
+  const eventCategoryOptions = useMemo(
+    () => formatOptions(eventCategories), 
+    [eventCategories]
+  );
+  
+  const businessDepartmentOptions = useMemo(
+    () => formatOptions(businessDepartments), 
+    [businessDepartments]
+  );
+  
+  const plantOptions = useMemo(
+    () => formatOptions(plants), 
+    [plants]
+  );
+  
+  const userOptions = useMemo(
+    () => formatOptions(buyers, 'id', 'name'), 
+    [buyers]
+  );
+  
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -64,85 +193,307 @@ const CreateAuction: React.FC = () => {
       setCurrentStep(stepIndex);
     }
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+  const handleCategoryChange = (value: string) => {
+    const selectedCategory = eventCategories.find((cat: any) => cat.id === value);
+    console.log('Selected Category:', selectedCategory);
+    
+    // Get terms from either termsAndConditions or conditions property
+    const terms = selectedCategory?.termsAndConditions || selectedCategory?.conditions || '';
+    
+    // Force a state update by creating a new object reference
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      eventCategory: value,
+      termsAndConditions: terms
     }));
   };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'file') {
+      const files = (e.target as HTMLInputElement).files;
+      if (files) {
+        const fileList = Array.from(files);
+        setFormData(prev => ({
+          ...prev,
+          [name]: fileList
+        }));
+      }
+    } else {
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, ...files]
+        [name]: value
       }));
     }
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    // TODO: Implement form submission logic
-    // navigate('/auctions');
+  const handleFileUpload = (
+    files: FileList | null, 
+    field: 'eventDocuments' | 'vendorDocuments' | 'images'
+  ) => {
+    if (files) {
+      const fileList = Array.from(files);
+      setFormData(prev => ({
+        ...prev,
+        [field]: [...(prev[field] || []), ...fileList]
+      }));
+    }
+  };
+
+  const handleRemoveFile = (
+    index: number, 
+    field: 'eventDocuments' | 'vendorDocuments' | 'images'
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: (prev[field] || []).filter((_, i) => i !== index)
+    }));
+  };
+
+
+
+  const handleSubmit = async () => {
+    // Validate required fields
+    const requiredFields: (keyof FormData)[] = [
+      'auctionName',
+      'eventCategory',
+      'businessDepartment',
+      'termsAndConditions'
+    ];
+
+    const missingFields = requiredFields.filter(field => !formData[field]);
+    
+    if (missingFields.length > 0) {
+      alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+
+    try {
+      // In a real app, you would upload files first and get their URLs
+      const uploadFiles = async (files: File[]) => {
+        // TODO: Implement file upload logic
+        return await Promise.all(files.map(async (file) => {
+          // Simulate file upload
+          await new Promise(resolve => setTimeout(resolve, 500));
+          return {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            url: URL.createObjectURL(file) // In real app, this would be the uploaded file URL
+          };
+        }));
+      };
+
+      const [eventDocs, vendorDocs] = await Promise.all([
+        uploadFiles(formData.eventDocuments),
+        uploadFiles(formData.vendorDocuments)
+      ]);
+
+      const submissionData = {
+        ...formData,
+        eventDocuments: eventDocs,
+        vendorDocuments: vendorDocs,
+      };
+
+      console.log('Form submitted:', submissionData);
+      
+      // TODO: Uncomment and implement actual form submission
+      // await api.createAuction(submissionData);
+      // navigate('/auctions');
+      
+      alert('Auction created successfully!');
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('An error occurred while submitting the form. Please try again.');
+    }
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 0: // Auction Details
+      case 0: // Auction Info
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Auction Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Auction Title</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Auction Name <span className="text-red-500">*</span>
+              </label>
               <Input
                 type="text"
-                name="title"
-                value={formData.title}
+                name="auctionName"
+                value={formData.auctionName}
                 onChange={handleInputChange}
-                placeholder="Enter auction title"
+                placeholder="Enter auction name"
                 required
               />
             </div>
+
+            {/* Event Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded-md"
-                rows={4}
-                placeholder="Enter detailed description"
-                required
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Event Category <span className="text-red-500">*</span>
+              </label>
+              <div className="select-wrapper">
+                <Select
+                  options={[
+                    { value: '', label: 'Select an option' },
+                    ...eventCategoryOptions
+                  ]}
+                  defaultValue={formData.eventCategory}
+                  onChange={handleCategoryChange}
+                  placeholder="Select event category"
+                />
+              </div>
+            </div>
+
+            {/* Business Department */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Business Department <span className="text-red-500">*</span>
+              </label>
+              <div className="select-wrapper">
+                <Select
+                  options={[
+                    { value: '', label: 'Select an option' },
+                    ...businessDepartmentOptions
+                  ]}
+                  defaultValue={formData.businessDepartment}
+                  onChange={(value: string) => 
+                    setFormData(prev => ({ ...prev, businessDepartment: value }))
+                  }
+                  placeholder="Select business department"
+                />
+              </div>
+            </div>
+
+            {/* Co-Creator Name (Optional) */}
+            <div>
+              <MultiSelect
+                label="Co-Creator Name (Optional)"
+                options={formatMultiSelectOptions(userOptions, formData.coCreators)}
+                defaultSelected={formData.coCreators}
+                onChange={(selected: string[]) => {
+                  setFormData(prev => ({ ...prev, coCreators: selected }));
+                }}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
-                <Input
-                  type="datetime-local"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleInputChange}
-                  required
+
+            {/* Plant Name (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Plant Name (Optional)
+              </label>
+              <Select
+                options={[
+                  { value: '', label: 'Select an option' },
+                  ...plantOptions
+                ]}
+                defaultValue={formData.plantName}
+                onChange={(value: string) => 
+                  setFormData(prev => ({ ...prev, plantName: value }))
+                }
+                placeholder="Select plant"
+              />
+            </div>
+
+            {/* Terms and Conditions */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Terms and Conditions <span className="text-red-500">*</span>
+              </label>
+              <div key={`editor-${formData.eventCategory}`} className="border rounded-md overflow-hidden">
+                <Editor
+                  value={formData.termsAndConditions || ''}
+                  onChange={(content) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      termsAndConditions: content
+                    }));
+                  }}
+                  placeholder="Terms and conditions will be auto-filled based on category"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
-                <Input
-                  type="datetime-local"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleInputChange}
-                  required
+            </div>
+
+            {/* Event Documents (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Event Documents (Optional)
+              </label>
+              <div className="file-input-wrapper">
+                <FileInput
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                    handleFileUpload(e.target.files, 'eventDocuments')
+                  }
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  multiple
                 />
               </div>
+              {formData.eventDocuments.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {formData.eventDocuments.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(index, 'eventDocuments')}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Vendor Documents (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Vendor Documents (Optional)
+              </label>
+              <div className="file-input-wrapper">
+                <FileInput
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                    handleFileUpload(e.target.files, 'vendorDocuments')
+                  }
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  multiple
+                />
+              </div>
+              {formData.vendorDocuments.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {formData.vendorDocuments.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(index, 'vendorDocuments')}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Observers (Optional) */}
+            <div>
+              <MultiSelect
+                label="Observers (Optional)"
+                options={formatMultiSelectOptions(userOptions, formData.observers)}
+                defaultSelected={formData.observers}
+                onChange={(selected: string[]) => {
+                  setFormData(prev => ({ ...prev, observers: selected }));
+                }}
+              />
             </div>
           </div>
         );
       
-      case 1: // Product Info
+      case 1: // Auction Behavior
         return (
           <div className="space-y-4">
             <div>
@@ -285,7 +636,7 @@ const CreateAuction: React.FC = () => {
                   className="hidden" 
                   multiple 
                   accept="image/*"
-                  onChange={handleImageUpload}
+                  onChange={(e) => handleFileUpload(e.target.files, 'images')}
                 />
               </label>
             </div>
@@ -333,13 +684,13 @@ const CreateAuction: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Title</p>
-                  <p className="font-medium">{formData.title || 'Not provided'}</p>
+                  <p className="font-medium">{formData.auctionName || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Description</p>
                   <p className="font-medium">
-                    {formData.description ? 
-                      (formData.description.length > 50 ? `${formData.description.substring(0, 50)}...` : formData.description) : 
+                    {formData.termsAndConditions ? 
+                      (formData.termsAndConditions.length > 50 ? `${formData.termsAndConditions.substring(0, 50)}...` : formData.termsAndConditions) : 
                       'Not provided'}
                   </p>
                 </div>

@@ -1,31 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, Search, AlertCircle } from 'lucide-react';
 
 // Components
-import InfoCard from './InfoCard';
 import ExcelUploadModal from './ExcelUploadModal';
 import { Input } from '../../components/ui/input';
 import Button from '../../components/ui/button/Button';
 import { Card } from '../../components/ui/card';
+import StatCard from '../../components/ui/stat-card/StatCard';
 
 // Hooks
 import { useGetMasterCountApi } from '../../hooks/API/useCommonApis';
 
 // Types
-type MasterDataItem = {
+interface MasterDataItem {
   title: string;
   count: number;
   path: string;
-  allowPermission: string[];
-  icon?: React.ReactNode;
+  icon: React.ReactNode;
+  description?: string;
+  color?: string;
+  iconColor?: string;
   accentColor?: string;
   iconBgColor?: string;
   subtitle?: string;
-};
+  allowPermission?: string[];
+}
 
-type MasterDataGroup = {
-  groupTitle: string;
+interface GroupItem {
+  title?: string;
+  groupTitle?: string;
   items: MasterDataItem[];
 };
 
@@ -43,17 +47,12 @@ const Dashboard: React.FC = () => {
     isLoading,
     isError, 
     error 
-  } = useGetMasterCountApi<MasterDataGroup[]>();
+  } = useGetMasterCountApi();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const hasPermission = (item: MasterDataItem): boolean => {
-    // Check if user has any of the required permissions
-    // Replace with your actual permission check logic
-    return item.allowPermission.length > 0;
-  };
 
   const fetchData = async (): Promise<void> => {
     try {
@@ -70,16 +69,32 @@ const Dashboard: React.FC = () => {
     void fetchData();
   }, [fetchData]);
 
-  const filteredGroups = React.useMemo(() => {
+  const filteredGroups = useMemo<GroupItem[]>(() => {
+    // Handle initial state and missing data
     if (!getCardsRecords?.data) return [];
     
-    return getCardsRecords.data.map(group => ({
-      ...group,
-      items: group.items.filter(item =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
-    })).filter(group => group.items.length > 0);
-  }, [getCardsRecords?.data, searchTerm]);
+    const data = Array.isArray(getCardsRecords.data) ? getCardsRecords.data : [];
+    const searchLower = searchTerm.toLowerCase();
+    
+    return data
+      .filter((group) => {
+        if (!group) return false;
+        const hasTitle = typeof group.title === 'string' || typeof group.groupTitle === 'string';
+        return hasTitle && Array.isArray(group.items);
+      })
+      .map(group => ({
+        title: group.title,
+        groupTitle: group.groupTitle,
+        items: group.items.filter(item => {
+          if (!item || typeof item.title !== 'string') return false;
+          const titleMatch = item.title.toLowerCase().includes(searchLower);
+          const description = item.description ?? item.subtitle ?? '';
+          const descMatch = description.toLowerCase().includes(searchLower);
+          return titleMatch || descMatch;
+        })
+      }))
+      .filter(group => group.items.length > 0);
+  }, [getCardsRecords, searchTerm]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setSearchTerm(e.target.value);
@@ -217,48 +232,67 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
+      
       {isLoading || isRefreshing ? (
         renderSkeletons()
       ) : (
-        <div className="space-y-8">
-          {filteredGroups.map((group, index) => (
-            <section key={index} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">{group.groupTitle}</h2>
-                <span className="text-sm text-muted-foreground">
-                  {group.items.length} items
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {group.items.map((item, itemIndex) => (
-                  <div key={itemIndex}>
-                    <InfoCard
-                      title={item.title}
-                      count={item.count}
-                      onClick={() => hasPermission(item) && navigate(item.path)}
-                      allowPermission={hasPermission(item) ? 'true' : 'false'}
-                      icon={item.icon}
-                      accentColor={item.accentColor}
-                      iconBgColor={item.iconBgColor}
-                      subtitle={item.subtitle}
-                    />
+        <>
+          <div className="space-y-8">
+            {filteredGroups.map((group, index) => {
+              const groupTitle = group.title || group.groupTitle || 'Untitled Group';
+              const groupItems = group.items || [];
+              return (
+                <section key={index} className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">{groupTitle}</h2>
+                    <span className="text-sm text-muted-foreground">
+                      {groupItems.length} items
+                    </span>
                   </div>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {groupItems.map((item: MasterDataItem) => {
+                      // Use the color from API response, fallback to accentColor or default blue
+                      const bgColor = item.accentColor || item.color || '#3b82f6';
+                      const description = item.subtitle || item.description || '';
+                      
+                      return (
+                        <div 
+                          key={item.path}
+                          className="group"
+                        >
+                          <StatCard
+                            title={item.title}
+                            value={item.count}
+                            description={description}
+                            bgColor={bgColor}
+                            showButton={true}
+                            buttonIcon={
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            }
+                            onButtonClick={() => navigate(item.path)}
+                            className="h-full group-hover:shadow-lg transition-shadow duration-200"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
 
-      <ExcelUploadModal
-        isOpen={isExcelModalOpen}
-        onClose={handleCloseExcelModal}
-        onSuccess={() => {
-          void fetchData();
-          handleCloseExcelModal();
-        }}
-      />
+          <ExcelUploadModal
+            isOpen={isExcelModalOpen}
+            onClose={handleCloseExcelModal}
+            onSuccess={() => {
+              void fetchData();
+              handleCloseExcelModal();
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };

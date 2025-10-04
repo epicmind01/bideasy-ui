@@ -13,6 +13,7 @@ import RFQView from './pages/RFQ/RFQView';
 import RFQComparison from './pages/RFQ/RFQComparison';
 import RFQRounds from './pages/RFQ/RFQRounds';
 import RFQRoundDetails from './pages/RFQ/RFQRoundDetails';
+import MasterDashboard from './pages/Master/Dashboard';
 import ArcReportsList from './pages/ArcReports';
 import ArcReportDetail from './pages/ArcReports/ArcReportDetail';
 import ContractList from './pages/Contract';
@@ -35,8 +36,6 @@ const LoginForm = lazy(() => import('./pages/Auth/Login'));
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   const { isAuthenticated } = useAuth();
-
-  console.log("isAuthenticated", isAuthenticated());
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
@@ -254,16 +253,30 @@ export const router = createBrowserRouter([
               <div className="p-6">
                 <h1 className="text-2xl font-bold">Edit Contract</h1>
                 <p className="text-gray-600 mt-2">Contract edit page - Coming soon</p>
-              </div>
+              </div></Suspense>
+          </ProtectedRoute>
+        ),
+       
+      },
+      {
+        path: 'master',
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<div>Loading...</div>}>
+              <MasterDashboard />
             </Suspense>
           </ProtectedRoute>
         ),
+    
+     
       },
       {
         path: 'purchase-requests',
         element: (
           <ProtectedRoute>
-            <PurchaseRequestList />
+            <Suspense fallback={<div>Loading...</div>}>
+              <PurchaseRequestList />
+            </Suspense>
           </ProtectedRoute>
         ),
       },
@@ -369,5 +382,9 @@ export const router = createBrowserRouter([
   {
     path: '*',
     element: <Navigate to="/" replace />,
-  },
-]);
+  }  
+],
+// {
+//   basename: '/buyer', // 👈 this is the important part
+// }
+);

@@ -3,20 +3,47 @@ import ENDPOINTS from "../../services/ENDPOINTS";
 import client from "../../services/axiosClient";
 import { getLocalItem } from "../../Utils/Helpers";
 import { LOCAL_STORAGE_KEYS } from "../../Utils/Helpers";
-import type {
-  CategoriesListResponse,
-  CityResponse,
-  countryResData,
-  ManufacturerRes,
-  MaterialGroup,
-  StateResponse,
-} from "../../Typings/MasterApiTypes";
+
+// Type definitions for API responses
+interface CityResponse {
+  id: string | number;
+  name: string;
+  [key: string]: any;
+}
+
+interface StateResponse {
+  id: string | number;
+  name: string;
+  [key: string]: any;
+}
+
+interface CountryResponse {
+  data: Array<{
+    id: string | number;
+    name: string;
+    [key: string]: any;
+  }>;
+}
+
+type ApiResponseItem = {
+  id: string | number;
+  name: string;
+  [key: string]: any;
+};
+
+type ApiResponse<T> = {
+  data: T[];
+  message?: string;
+  success?: boolean;
+};
 
 export interface MasterCountResponse {
   message: string;
   data: Array<{
+    title: string;
     groupTitle: string;
     items: Array<{
+      description: string | undefined;
       title: string;
       count: number;
       path: string;
@@ -65,7 +92,7 @@ export const useGetMasterCountApi = () => {
 };
 // ✅ Get All Cities
 export const useGetCityApi = () => {
-    return useQuery<CityResponse[]>({
+  return useQuery<CityResponse[]>({
       queryKey: ["CityNames"],
       queryFn: async (): Promise<CityResponse[]> => {
         const res = await client.get<{ data: CityResponse[] }>(
@@ -112,7 +139,7 @@ export const useGetCityApi = () => {
   
   // ✅ Get States
   export const useGetStateApi = () => {
-    return useQuery<StateResponse[]>({
+  return useQuery<StateResponse[]>({
       queryKey: ["StateNames"],
       queryFn: async (): Promise<StateResponse[]> => {
         const res = await client.get<{ data: StateResponse[] }>(
@@ -156,10 +183,10 @@ export const useGetStateListByCountryIdApi = (id: string) => {
 };
 
 export const useGetCountryApi = () => {
-  return useQuery<countryResData['data']>({
-    queryKey: ["CountryName"],
-    queryFn: async (): Promise<countryResData['data']> => {
-      const res = await client.get<countryResData>(
+  return useQuery<CountryResponse['data']>({
+    queryKey: ["countries"],
+    queryFn: async (): Promise<CountryResponse['data']> => {
+      const res = await client.get<CountryResponse>(
         ENDPOINTS.Common.Country,
         {
           headers: {
@@ -179,7 +206,7 @@ export const useGetCountryApi = () => {
 
 export const useGetActiveBrandApi = () => {
   return useQuery<unknown[]>({
-    queryKey: ["BrandName"],
+    queryKey: ["brands"],
     queryFn: async (): Promise<unknown[]> => {
       const res = await client.get<{ data: unknown[] }>(
         ENDPOINTS.Common.Brand,
@@ -201,7 +228,7 @@ export const useGetActiveBrandApi = () => {
 
 export const useGetActiveGenericApi = () => {
   return useQuery<unknown[]>({
-    queryKey: ["GenericName"],
+    queryKey: ["generics"],
     queryFn: async (): Promise<unknown[]> => {
       const res = await client.get<{ data: unknown[] }>(
         ENDPOINTS.Common.Generic,
@@ -222,10 +249,10 @@ export const useGetActiveGenericApi = () => {
 };
 
 export const useGetActiveBusinessDepartment = () => {
-  return useQuery<unknown[]>({
-    queryKey: ["BusinessDepartments"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
+  return useQuery<ApiResponse<ApiResponseItem>, unknown>({
+    queryKey: ["businessDepartments"],
+    queryFn: async (): Promise<ApiResponse<ApiResponseItem>> => {
+      const response = await client.get<ApiResponse<ApiResponseItem>>(
         ENDPOINTS.Common.BusinessDepartment,
         {
           headers: {
@@ -233,7 +260,7 @@ export const useGetActiveBusinessDepartment = () => {
           },
         }
       );
-      return res.data.data;
+      return response.data;
     },
     meta: {
       onError: (error: unknown) => {
@@ -242,11 +269,12 @@ export const useGetActiveBusinessDepartment = () => {
     },
   });
 };
+
 export const useGetActiveBuyers = () => {
-  return useQuery<unknown[]>({
-    queryKey: ["Buyers"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
+  return useQuery<ApiResponse<ApiResponseItem>, unknown>({
+    queryKey: ["buyers"],
+    queryFn: async (): Promise<ApiResponse<ApiResponseItem>> => {
+      const response = await client.get<ApiResponse<ApiResponseItem>>(
         ENDPOINTS.Common.buyers,
         {
           headers: {
@@ -254,28 +282,7 @@ export const useGetActiveBuyers = () => {
           },
         }
       );
-      return res.data.data;
-    },
-    meta: {
-      onError: (error: unknown) => {
-        console.error("Query Error:", error);
-      },
-    },
-  });
-};
-export const useGetActiveCategories = () => {
-  return useQuery<unknown[]>({
-    queryKey: ["Categories"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
-        ENDPOINTS.Common.categories,
-        {
-          headers: {
-            Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
-          },
-        }
-      );
-      return res.data.data;
+      return response.data;
     },
     meta: {
       onError: (error: unknown) => {
@@ -286,10 +293,10 @@ export const useGetActiveCategories = () => {
 };
 
 export const useGetActiveAuctionCategories = () => {
-  return useQuery<unknown[]>({
-    queryKey: ["AuctionCategories"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
+  return useQuery<ApiResponse<ApiResponseItem>, unknown>({
+    queryKey: ["auctionCategories"],
+    queryFn: async (): Promise<ApiResponse<ApiResponseItem>> => {
+      const response = await client.get<ApiResponse<ApiResponseItem>>(
         ENDPOINTS.Common.auctionCategories,
         {
           headers: {
@@ -297,185 +304,7 @@ export const useGetActiveAuctionCategories = () => {
           },
         }
       );
-      return res.data.data;
-    },
-    meta: {
-      onError: (error: unknown) => {
-        console.error("Query Error:", error);
-      },
-    },
-  });
-};
-
-export const useGetActivePaymentTerms = () => {
-  return useQuery<unknown[]>({
-    queryKey: ["PaymentTerms"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
-        ENDPOINTS.Common.paymentTerms,
-        {
-          headers: {
-            Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
-          },
-        }
-      );
-      return res.data.data;
-    },
-    meta: {
-      onError: (error: unknown) => {
-        console.error("Query Error:", error);
-      },
-    },
-  });
-};
-
-export const useGetMaterialGroupList = () => {
-  return useQuery<MaterialGroup['data']>({
-    queryKey: ["MaterialGroupList"],
-    queryFn: async (): Promise<MaterialGroup['data']> => {
-      const res = await client.get<MaterialGroup>(
-        ENDPOINTS.Common.materialGroup,
-        {
-          headers: {
-            Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
-          },
-        }
-      );
-      return res.data.data;
-    },
-    meta: {
-      onError: (error: unknown) => {
-        console.error("Query Error:", error);
-      },
-    },
-  });
-};
-
-export const useGetCategoriesListByMaterialGroupId = (id: string) => {
-  return useQuery<CategoriesListResponse['data']>({
-    queryKey: ["categoryListById", id],
-    queryFn: async (): Promise<CategoriesListResponse['data']> => {
-      const res = await client.get<CategoriesListResponse>(
-        `${ENDPOINTS.Common.categories}/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
-          },
-        }
-      );
-      return res.data.data;
-    },
-    enabled: !!id,
-    meta: {
-      onError: (error: unknown) => {
-        console.error("Query Error:", error);
-      },
-    },
-  });
-};
-
-export const useGetAllActiveCompanyCodes = () => {
-  return useQuery<unknown[]>({
-    queryKey: ["company-codes"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
-        ENDPOINTS.Common.companyCodes,
-        {
-          headers: {
-            Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
-          },
-        }
-      );
-      return res.data.data;
-    },
-    meta: {
-      onError: (error: unknown) => {
-        console.error("Query Error:", error);
-      },
-    },
-  });
-};
-
-export const useGetAllActiveMaterialTypes = () => {
-  return useQuery<unknown[]>({
-    queryKey: ["materialTypes"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
-        ENDPOINTS.Common.materialTypes,
-        {
-          headers: {
-            Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
-          },
-        }
-      );
-      return res.data.data;
-    },
-    meta: {
-      onError: (error: unknown) => {
-        console.error("Query Error:", error);
-      },
-    },
-  });
-};
-
-export const useGetAllActiveManufacturers = () => {
-  return useQuery<ManufacturerRes['data']>({
-    queryKey: ["manufacturers"],
-    queryFn: async (): Promise<ManufacturerRes['data']> => {
-      const res = await client.get<ManufacturerRes>(
-        ENDPOINTS.Common.Manufacturer,
-        {
-          headers: {
-            Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
-          },
-        }
-      );
-      return res.data.data;
-    },
-    meta: {
-      onError: (error: unknown) => {
-        console.error("Query Error:", error);
-      },
-    },
-  });
-};
-
-
-export const useGetAllActivePermissions = () => {
-  return useQuery<unknown[]>({
-    queryKey: ["permission"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
-        ENDPOINTS.Common.permission,
-        {
-          headers: {
-            Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
-          },
-        }
-      );
-      return res.data.data;
-    },
-    meta: {
-      onError: (error: unknown) => {
-        console.error("Query Error:", error);
-      },
-    },
-  });
-};
-
-export const useGetAllActiveGeneralLedgerAccounts = () => {
-  return useQuery<unknown[]>({
-    queryKey: ["generalLedgerAccount"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
-        ENDPOINTS.Common.GeneralLedgerAccount,
-        {
-          headers: {
-            Authorization: `Bearer ${getLocalItem(LOCAL_STORAGE_KEYS.TOKEN)}`,
-          },
-        }
-      );
-      return res.data.data;
+      return response.data;
     },
     meta: {
       onError: (error: unknown) => {
@@ -486,10 +315,10 @@ export const useGetAllActiveGeneralLedgerAccounts = () => {
 };
 
 export const useGetAllActivePlants = () => {
-  return useQuery<unknown[]>({
+  return useQuery<ApiResponse<ApiResponseItem>, unknown>({
     queryKey: ["plants"],
-    queryFn: async (): Promise<unknown[]> => {
-      const res = await client.get<{ data: unknown[] }>(
+    queryFn: async (): Promise<ApiResponse<ApiResponseItem>> => {
+      const response = await client.get<ApiResponse<ApiResponseItem>>(
         ENDPOINTS.Common.plants,
         {
           headers: {
@@ -497,7 +326,7 @@ export const useGetAllActivePlants = () => {
           },
         }
       );
-      return res.data.data;
+      return response.data;
     },
     meta: {
       onError: (error: unknown) => {

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3000/api/v1";
+const API_URL = "https://api.easybid.in/api/v1";
 
 const client = axios.create({
   baseURL: API_URL,

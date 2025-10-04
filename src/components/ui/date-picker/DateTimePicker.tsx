@@ -20,7 +20,7 @@ interface DateTimePickerProps {
 }
 
 const CustomInput = React.forwardRef<HTMLButtonElement, any>(
-  ({ value, onClick, placeholder, disabled, className }, ref) => (
+  ({ value, onClick, placeholder, disabled, className }) => (
     <Button
       type="button"
       variant="outline"
@@ -82,13 +82,13 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
           {
             name: 'preventOverflow',
             options: {
-              rootBoundary: 'viewport',
-              tether: false,
+              boundary: 'viewport',
               altAxis: true,
               padding: 5,
+              tether: false,
             },
           },
-        ]}
+        ] as any}
         popperPlacement="bottom-start"
       />
     </div>

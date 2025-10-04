@@ -4,10 +4,10 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { getLocalItem, resetLocalStorage } from "../../Utils/Helpers";
 import { LOCAL_STORAGE_KEYS } from "../../Utils/Helpers";
+import { useNavigate } from "react-router-dom";
 
 export default function UserDropdown() {
-  // const router = useRouter(); // ADD THIS LINE
-  // const { logout } = useAuth(); // ADD THIS LINE if not already there
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const user = getLocalItem(LOCAL_STORAGE_KEYS.USER);
 
@@ -29,7 +29,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
       closeDropdown();
       
       // Redirect to login page
-      window.location.href = '/login';
+      navigate('/login');
     } catch (error) {
       console.error('Error during sign out:', error);
     }
@@ -44,7 +44,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
           <img
             width={44}
             height={44}
-            src="/images/user/owner5.jpg"
+            src="https://bidezy.com/buyer/images/user/owner5.jpg"
             alt="User"
           />
         </span>

@@ -7,7 +7,7 @@ import { Modal } from '../../components/ui/modal/Modal';
 import Button from '../../components/ui/button/Button';
 import PageHeader from '../../components/ui/page-header/PageHeader';
 import Badge from '../../components/ui/badge/Badge';
-import { DataTable } from '../../components/ui/data-table/DataTableFixed';
+import { DataTable } from '../../components/ui/data-table/DataTable';
 import { useGetAuctionListApi, useDeleteAuctionApi, useCloneAuctionApi } from '../../hooks/API/AuctionApi';
 import type { AuctionData } from '../../Typings/AuctionTypes';
 
@@ -330,17 +330,6 @@ const AuctionList = () => {
     return isAfter(cloneForm.endTime, cloneForm.startTime);
   }, [cloneForm.startTime, cloneForm.endTime]);
 
-  // Set default start time to now and end time to 1 hour from now when opening the modal
-  const handleOpenCloneModal = (auction: AuctionData) => {
-    const now = new Date();
-    setAuctionToClone(auction);
-    setCloneForm({
-      name: `${auction.name} (Copy)`,
-      startTime: now,
-      endTime: addHours(now, 1)
-    });
-    setCloneModalOpen(true);
-  };
 
   // Handle export of selected rows
   const handleExport = useCallback(() => {
